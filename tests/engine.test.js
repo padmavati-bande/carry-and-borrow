@@ -50,8 +50,11 @@ function steps(op, a, b) { return Engine.buildSteps({ op: op, a: a, b: b, len: S
 assert.strictEqual(simulate({ op: 'add', a: 58, b: 67, len: 2 }), '125');
 assert.strictEqual(simulate({ op: 'sub', a: 52, b: 28, len: 2 }), '24');
 assert.strictEqual(steps('sub', 52, 28)[0].expected, '12');  // 2 + 10
-assert.strictEqual(steps('sub', 52, 28)[1].expected, '4');   // 5 - 1
-assert.strictEqual(steps('sub', 52, 28)[2].expected, '4');   // 12 - 8
+assert.strictEqual(steps('sub', 52, 28)[1].expected, '4');   // 12 - 8
+assert.strictEqual(steps('sub', 52, 28)[2].expected, '2');   // 5 - 2 - 1 (borrow mark)
+assert.strictEqual(steps('sub', 94, 59).length, 3);          // no separate 9 - 1 step
+assert.strictEqual(simulate({ op: 'sub', a: 94, b: 59, len: 2 }), '35');
+assert.strictEqual(simulate({ op: 'sub', a: 325, b: 147, len: 3 }), '178'); // chained borrow
 assert.strictEqual(steps('add', 58, 67)[0].expected, '15');  // 8 + 7
 assert.strictEqual(steps('add', 58, 67)[1].expected, '12');  // 5 + 6 + 1
 

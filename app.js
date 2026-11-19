@@ -41,7 +41,7 @@
       buffer: '',
       locked: false,
       finished: false,
-      view: { ans: {}, carry: {}, struck: {}, just: null, fly: null }
+      view: { ans: {}, carry: {}, struck: {}, mark: {}, just: null, fly: null }
     };
     game.index++;
     $('next-btn').hidden = true;
@@ -129,11 +129,21 @@
     for (c = cols - 1; c >= 0; c--) {
       board.appendChild(cell('top' + (v.struck[c] ? ' struck' : '') + dim(c), c < len ? da[c] : '', 'cell-top-' + c));
     }
-    // bottom number with operator, then the rule
-    board.appendChild(cell('op rule', sym(p.op), 'cell-op'));
+    // subtraction: borrow row sits above the rule, with its own operator.
+    // addition: rule goes straight under the bottom number.
+    var sub = p.op === 'sub', rule = sub ? '' : ' rule';
+    board.appendChild(cell('op' + rule, sym(p.op), 'cell-op'));
     for (c = cols - 1; c >= 0; c--) {
-      board.appendChild(cell('bottom rule' + dim(c), c < len ? db[c] : '', 'cell-bottom-' + c));
+      board.appendChild(cell('bottom' + rule + dim(c), c < len ? db[c] : '', 'cell-bottom-' + c));
     }
+    if (sub) {
+      board.appendChild(cell('op rule', sym(p.op), 'cell-op2'));
+      for (c = cols - 1; c >= 0; c--) {
+        board.appendChild(cell('mark rule' + dim(c), v.mark[c] || '', 'cell-mark-' + c));
+      }
+    }
+    board.style.gridTemplateRows = 'repeat(' + (sub ? 5 : 4) + ', var(--cell))';
+    board.style.setProperty('--ans-row', sub ? 4 : 3);
     // answer row
     board.appendChild(cell('spacer', ''));
     var w = wide();
@@ -187,10 +197,11 @@
   function applyEffects(step) {
     var v = cur.view, cols = [];
     step.effects.forEach(function (e) {
-      cols.push(e.col);
+      if (e.kind !== 'borrow') cols.push(e.col);
       if (e.kind === 'ans') v.ans[e.col] = e.value;
       else if (e.kind === 'carry') { v.carry[e.col] = e.value; v.fly = e.col; }
       else if (e.kind === 'newTop') { v.carry[e.col] = e.value; v.struck[e.col] = true; }
+      else if (e.kind === 'borrow') v.mark[e.col] = e.value;
     });
     v.just = cols;
     v.slide = step.targets.some(function (t) { return t.col < 0; });

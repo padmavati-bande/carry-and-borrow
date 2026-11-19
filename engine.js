@@ -122,41 +122,34 @@
 
   function buildSubSteps(p) {
     var len = p.len, cur = digitsOf(p.a, len), db = digitsOf(p.b, len);
-    var steps = [];
+    var steps = [], lent = 0; // lent: 1 if the column below borrowed from this one
     for (var i = 0; i < len; i++) {
       var title = capitalize(PLACES[i]) + ' column';
-      if (cur[i] < db[i]) {
+      var bot = db[i] + lent, nextLent = 0;
+      if (cur[i] < bot) {
         steps.push({
           title: title,
-          question: cur[i] + ' is smaller than ' + db[i] + ', so borrow! Add 10 to the ' + cur[i] + '. What do you get?',
+          question: cur[i] + ' is smaller than ' + bot + ', so borrow! Add 10 to the ' + cur[i] + '. What do you get?',
           expected: String(cur[i] + 10),
           hint: 'Ten plus ' + cur[i] + '.',
-          success: 'Now the top digit is ' + (cur[i] + 10) + '.',
-          effects: [{ kind: 'newTop', col: i, value: String(cur[i] + 10) }],
+          success: 'Now the top digit is ' + (cur[i] + 10) + '. The ' + PLACES[i + 1] + ' bottom digit now has a 1 under it.',
+          effects: [{ kind: 'newTop', col: i, value: String(cur[i] + 10) }, { kind: 'borrow', col: i + 1, value: '1' }],
           targets: [{ row: 'carry', col: i }]
         });
         cur[i] += 10;
-        steps.push({
-          title: title,
-          question: 'You borrowed 1 from the ' + PLACES[i + 1] + ' column. What is ' + cur[i + 1] + ' − 1?',
-          expected: String(cur[i + 1] - 1),
-          hint: 'One less than ' + cur[i + 1] + '.',
-          success: 'The ' + PLACES[i + 1] + ' digit is now ' + (cur[i + 1] - 1) + '.',
-          effects: [{ kind: 'newTop', col: i + 1, value: String(cur[i + 1] - 1) }],
-          targets: [{ row: 'carry', col: i + 1 }]
-        });
-        cur[i + 1] -= 1;
+        nextLent = 1;
       }
-      var d = cur[i] - db[i];
+      var d = cur[i] - bot;
       steps.push({
         title: title,
-        question: 'What is ' + cur[i] + ' ' + MINUS + ' ' + db[i] + '?',
+        question: 'What is ' + cur[i] + ' ' + MINUS + ' ' + db[i] + (lent ? ' ' + MINUS + ' 1' : '') + '?',
         expected: String(d),
-        hint: 'Start at ' + db[i] + ' and count up to ' + cur[i] + '. How many steps?',
+        hint: 'Start at ' + bot + ' and count up to ' + cur[i] + '. How many steps?',
         success: 'Write the ' + d + '.',
         effects: [{ kind: 'ans', col: i, value: String(d) }],
         targets: [{ row: 'ans', col: i }]
       });
+      lent = nextLent;
     }
     return steps;
   }

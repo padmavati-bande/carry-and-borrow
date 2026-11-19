@@ -68,12 +68,12 @@ legend { font-weight: 700; margin-bottom: 8px; padding: 0; }
 .board {
   display: grid;
   grid-template-columns: repeat(calc(var(--cols) + 1), var(--cell));
-  grid-template-rows: repeat(4, var(--cell));
+  grid-template-rows: repeat(4, var(--cell)); /* set per problem in app.js renderBoard */
   border-top: 1px solid var(--grid); border-left: 1px solid var(--grid);
   position: relative;
 }
 /* extra answer cell just outside the right edge (second digit of a two-digit sum) */
-.cell.extra { position: absolute; left: 100%; top: calc(var(--cell) * 3); width: var(--cell); height: var(--cell); }
+.cell.extra { position: absolute; left: 100%; top: calc(var(--cell) * var(--ans-row, 3)); width: var(--cell); height: var(--cell); }
 .cell {
   display: flex; align-items: center; justify-content: center;
   font-size: calc(var(--cell) * .62); font-weight: 800; position: relative;
@@ -83,6 +83,8 @@ legend { font-weight: 700; margin-bottom: 8px; padding: 0; }
 .cell.carry.filled, .cell.carry.target { background-color: var(--blue-soft); }
 .cell.carry.target { border-bottom-color: var(--grid); }
 .cell.dim { color: #d4d4d4; }
+/* borrow row: blue 1 lent to the column on its left */
+.cell.mark { font-size: calc(var(--cell) * .45); color: var(--blue); font-weight: 800; }
 .cell.top.struck { color: #94a3b8; }
 .cell.top.struck::after {
   content: ""; position: absolute; left: 18%; right: 18%; top: 50%; border-top: 4px solid var(--bad); transform: rotate(-20deg);
