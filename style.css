@@ -92,6 +92,7 @@ legend { font-weight: 700; margin-bottom: 8px; padding: 0; }
 .cell.op { color: #d4d4d4; }
 .cell.rule { border-bottom: 3px solid #d4d4d4; }
 .cell.ans { font-size: calc(var(--cell) * .66); }
+.cell.ans:not(.target) { color: var(--ok); }
 .cell.target {
   background: var(--blue-soft); border-bottom: 4px solid var(--blue); border-radius: 8px;
   animation: pulse 1.2s ease-in-out infinite;
