@@ -1,0 +1,10 @@
+{
+  "name": "carry-and-borrow",
+  "version": "1.0.0",
+  "description": "Guided column addition and subtraction practice for kids",
+  "private": true,
+  "scripts": {
+    "test": "node tests/engine.test.js",
+    "start": "python3 -m http.server 8000"
+  }
+}
