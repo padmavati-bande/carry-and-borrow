@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Pushing main: test, build dist, publish dist to origin gh-pages (GitHub Pages).
+# Other branches: no-op. A failed test or build blocks the push.
+set -euo pipefail
+
+remote="$1"
+main_pushed=0
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  [ "$remote_ref" = "refs/heads/main" ] && main_pushed=1
+done
+[ "$main_pushed" = 1 ] || exit 0
+
+root="$(git rev-parse --show-toplevel)"
+cd "$root"
+
+echo "pre-push: test + build"
+npm test
+npm run build
+
+echo "pre-push: publish dist -> $remote gh-pages"
+url="$(git remote get-url "$remote")"
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+git clone -q --depth 1 --branch gh-pages "$url" "$tmp/pages"
+find "$tmp/pages" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+cp -R "$root/dist/." "$tmp/pages/"
+cd "$tmp/pages"
+git add -A
+if git diff --cached --quiet; then
+  echo "pre-push: gh-pages unchanged"
+else
+  git commit -q -m "Deploy site from $(git -C "$root" rev-parse --short HEAD)"
+  git push -q origin gh-pages
+  echo "pre-push: gh-pages updated"
+fi

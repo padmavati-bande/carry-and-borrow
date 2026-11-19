@@ -13,6 +13,7 @@ npm install
 npm run dev      # dev server, opens on http://localhost:5173
 npm run build    # static site in dist/ (GitHub Pages ready, relative base)
 npm run preview  # serve dist/ locally
+git config core.hooksPath .githooks  # once per clone: pushing main publishes dist/ to gh-pages
 ```
 
 ## How it works
