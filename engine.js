@@ -89,14 +89,16 @@
       var effects = [], targets = [], success;
       if (s >= 10) {
         effects.push({ kind: 'ans', col: i, value: String(s % 10) });
-        targets.push({ row: 'ans', col: i });
+        // Typing order = left to right. Ones column: 1st digit under it, 2nd in an
+        // extra cell to its right (col -1), then both slide left. Other columns:
+        // 1st digit in the cell to the left (col i + 1), 2nd under this column.
+        if (i === 0) targets.push({ row: 'ans', col: 0 }, { row: 'ans', col: -1 });
+        else targets.push({ row: 'ans', col: i + 1 }, { row: 'ans', col: i });
         if (last) {
           effects.push({ kind: 'ans', col: i + 1, value: '1' });
-          targets.push({ row: 'ans', col: i + 1 });
           success = s + ' is ten or more, so write ' + s + ' in full.';
         } else {
           effects.push({ kind: 'carry', col: i + 1, value: '1' });
-          targets.push({ row: 'carry', col: i + 1 });
           success = 'Write the ' + (s % 10) + ' and carry the 1 to the ' + PLACES[i + 1] + '.';
         }
       } else {

@@ -41,7 +41,7 @@
       buffer: '',
       locked: false,
       finished: false,
-      view: { ans: {}, carry: {}, struck: {}, just: null }
+      view: { ans: {}, carry: {}, struck: {}, just: null, fly: null }
     };
     game.index++;
     $('next-btn').hidden = true;
@@ -70,8 +70,23 @@
 
   function activeStep() { return cur.steps[cur.stepIndex]; }
 
+  // Typed digits fill the target cells in order. 8 + 8: type 1 then 6 ->
+  // the 1 goes under the 8, the 6 in the extra cell right of it. Then both move.
+  function bufferFor(row, col) {
+    var ts = activeStep().targets, exp = activeStep().expected;
+    var idx = -1;
+    ts.forEach(function (t, j) { if (t.row === row && t.col === col) idx = j; });
+    if (ts.length === exp.length) return cur.buffer.charAt(idx);
+    return idx === 0 ? cur.buffer : ''; // one cell holds all digits (borrow step)
+  }
+
+  // ones column with a two-digit sum: answer row grows one cell to the right
+  function wide() {
+    return !cur.finished && !cur.settle && activeStep().targets.some(function (t) { return t.col < 0; });
+  }
+
   function isTarget(row, col) {
-    if (cur.finished) return false;
+    if (cur.finished || cur.settle) return false;
     return activeStep().targets.some(function (t) { return t.row === row && t.col === col; });
   }
 
@@ -94,15 +109,20 @@
     // digits outside the active column(s) fade
     var tg = cur.finished ? [] : activeStep().targets;
     var ansTg = tg.filter(function (t) { return t.row === 'ans'; });
-    if (ansTg.length) tg = ansTg; // carry target is only the destination
+    // the active column is the lowest answer target (col -1 counts as col 0)
+    if (ansTg.length) tg = [{ col: Math.max(0, Math.min.apply(null, ansTg.map(function (t) { return t.col; }))) }];
     function dim(col) { return !cur.finished && !tg.some(function (t) { return t.col === col; }) ? ' dim' : ''; }
     // carry / borrow row
     board.appendChild(cell('spacer', ''));
     for (c = cols - 1; c >= 0; c--) {
-      var carryText = v.carry[c] || '';
-      board.appendChild(cell(
-        'carry' + (carryText ? ' filled' : '') + (isTarget('carry', c) ? ' target' : ''),
-        carryText, 'cell-carry-' + c));
+      var tgt = isTarget('carry', c);
+      var carryText = tgt ? bufferFor('carry', c) : (v.carry[c] || '');
+      var flies = v.fly === c;
+      var cc = cell(
+        'carry' + (carryText ? ' filled' : '') + (tgt ? ' target' : '') + (flies ? ' fly' : ''),
+        carryText, 'cell-carry-' + c);
+      if (flies) cc.style.setProperty('--fx', v.slide ? '1' : '0'); // ones column starts one cell right
+      board.appendChild(cc);
     }
     // top number
     board.appendChild(cell('spacer', ''));
@@ -116,24 +136,28 @@
     }
     // answer row
     board.appendChild(cell('spacer', ''));
-    for (c = cols - 1; c >= 0; c--) {
+    var w = wide();
+    for (c = cols - 1; c >= (w ? -1 : 0); c--) {
       var just = v.just && v.just.indexOf(c) !== -1;
-      board.appendChild(cell(
-        'ans' + (isTarget('ans', c) ? ' target' : '') + (just ? ' just' : ''),
-        v.ans[c] || '', 'cell-ans-' + c));
+      var tg2 = isTarget('ans', c);
+      var txt = tg2 ? bufferFor('ans', c) : v.ans[c] || '';
+      var ac = cell('ans' + (tg2 ? ' target' : '') + (just ? ' just' : '') + (v.slide && txt ? ' slide' : '') + (c < 0 ? ' extra' : ''),
+        txt, 'cell-ans-' + c);
+      board.appendChild(ac);
     }
   }
 
+  // typed digits show inside the blue target cell, like writing on paper
+  function targetEls() {
+    return activeStep().targets.map(function (tg) { return $('cell-' + tg.row + '-' + tg.col); });
+  }
+
   function renderInput() {
-    var step = activeStep(), len = step.expected.length;
-    var box = $('input');
-    box.innerHTML = '';
-    for (var i = 0; i < len; i++) {
-      var b = document.createElement('span');
-      b.className = 'box' + (i === cur.buffer.length ? ' cursor' : '');
-      b.textContent = cur.buffer.charAt(i);
-      box.appendChild(b);
-    }
+    activeStep().targets.forEach(function (tg) {
+      var el = $('cell-' + tg.row + '-' + tg.col);
+      el.textContent = bufferFor(tg.row, tg.col);
+      if (tg.row === 'carry') el.classList.toggle('filled', !!el.textContent);
+    });
   }
 
   function setFeedback(text, kind) {
@@ -147,7 +171,9 @@
     $('step-title').textContent = 'Problem ' + game.index + ' of ' + TOTAL + ' · ' + step.title;
     $('question').textContent = step.question;
     $('note').textContent = step.expected.length > 1 ? 'Type both digits.' : '';
-    $('input').className = 'input';
+    cur.view.fly = null;
+    cur.view.slide = false;
+    cur.settle = false;
     cur.buffer = '';
     cur.wrongOnStep = 0;
     cur.locked = false;
@@ -163,10 +189,11 @@
     step.effects.forEach(function (e) {
       cols.push(e.col);
       if (e.kind === 'ans') v.ans[e.col] = e.value;
-      else if (e.kind === 'carry') v.carry[e.col] = e.value;
+      else if (e.kind === 'carry') { v.carry[e.col] = e.value; v.fly = e.col; }
       else if (e.kind === 'newTop') { v.carry[e.col] = e.value; v.struck[e.col] = true; }
     });
     v.just = cols;
+    v.slide = step.targets.some(function (t) { return t.col < 0; });
   }
 
   function press(d) {
@@ -188,9 +215,10 @@
     var step = activeStep();
     cur.locked = true;
     if (cur.buffer === step.expected) {
-      $('input').className = 'input right';
       applyEffects(step);
       cur.stepIndex++;
+      cur.buffer = '';
+      cur.settle = true; // show the settled board until the next step starts
       if (cur.stepIndex >= cur.steps.length) {
         cur.stepIndex = cur.steps.length - 1;
         cur.finished = true;
@@ -203,7 +231,8 @@
     } else {
       cur.mistakes++;
       cur.wrongOnStep++;
-      $('input').className = 'input shake';
+      var tc = targetEls();
+      tc.forEach(function (el) { el.classList.add('shake'); });
       var msg = 'Not quite. Try again!';
       if (cur.wrongOnStep === 2) msg = 'Hint: ' + step.hint;
       if (cur.wrongOnStep >= 3) msg = 'The answer is ' + step.expected + '. Type it in to keep going.';
@@ -211,7 +240,7 @@
       setTimeout(function () {
         cur.buffer = '';
         cur.locked = false;
-        $('input').className = 'input';
+        tc.forEach(function (el) { el.classList.remove('shake'); });
         renderInput();
       }, 700);
     }
@@ -225,7 +254,6 @@
     $('step-title').textContent = 'Problem ' + game.index + ' of ' + TOTAL;
     $('question').textContent = p.a + ' ' + sym(p.op) + ' ' + p.b + ' = ' + E.solution(p);
     $('note').textContent = cur.mistakes === 0 ? 'No mistakes. Brilliant!' : 'You got it! Try for no mistakes on the next one.';
-    $('input').innerHTML = '';
     setFeedback(lastStep.success, 'ok');
     var next = $('next-btn');
     next.textContent = game.index >= TOTAL ? 'See my score →' : 'Next problem →';
