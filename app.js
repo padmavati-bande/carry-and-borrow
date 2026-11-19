@@ -91,6 +91,11 @@
     board.innerHTML = '';
 
     var c;
+    // digits outside the active column(s) fade
+    var tg = cur.finished ? [] : activeStep().targets;
+    var ansTg = tg.filter(function (t) { return t.row === 'ans'; });
+    if (ansTg.length) tg = ansTg; // carry target is only the destination
+    function dim(col) { return !cur.finished && !tg.some(function (t) { return t.col === col; }) ? ' dim' : ''; }
     // carry / borrow row
     board.appendChild(cell('spacer', ''));
     for (c = cols - 1; c >= 0; c--) {
@@ -102,12 +107,12 @@
     // top number
     board.appendChild(cell('spacer', ''));
     for (c = cols - 1; c >= 0; c--) {
-      board.appendChild(cell('top' + (v.struck[c] ? ' struck' : ''), c < len ? da[c] : '', 'cell-top-' + c));
+      board.appendChild(cell('top' + (v.struck[c] ? ' struck' : '') + dim(c), c < len ? da[c] : '', 'cell-top-' + c));
     }
     // bottom number with operator, then the rule
     board.appendChild(cell('op rule', sym(p.op), 'cell-op'));
     for (c = cols - 1; c >= 0; c--) {
-      board.appendChild(cell('bottom rule', c < len ? db[c] : '', 'cell-bottom-' + c));
+      board.appendChild(cell('bottom rule' + dim(c), c < len ? db[c] : '', 'cell-bottom-' + c));
     }
     // answer row
     board.appendChild(cell('spacer', ''));

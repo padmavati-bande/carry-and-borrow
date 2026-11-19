@@ -20,10 +20,6 @@ body {
   color: var(--ink);
   font-family: ui-rounded, "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
   background-color: var(--bg);
-  background-image:
-    linear-gradient(var(--grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 48px 48px;
   min-height: 100vh;
 }
 
@@ -72,27 +68,31 @@ legend { font-weight: 700; margin-bottom: 8px; padding: 0; }
 .board {
   display: grid;
   grid-template-columns: repeat(calc(var(--cols) + 1), var(--cell));
-  grid-template-rows: calc(var(--cell) * .75) repeat(4, var(--cell));
+  grid-template-rows: repeat(4, var(--cell));
+  border-top: 1px solid var(--grid); border-left: 1px solid var(--grid);
 }
 .cell {
   display: flex; align-items: center; justify-content: center;
   font-size: calc(var(--cell) * .62); font-weight: 800; position: relative;
+  border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid);
 }
-.cell.carry { font-size: calc(var(--cell) * .38); color: var(--blue); align-items: flex-end; }
-.cell.carry.filled { background: var(--blue-soft); border-radius: 8px; }
+.cell.carry { font-size: calc(var(--cell) * .38); color: var(--blue); padding: 12%; background-clip: content-box; }
+.cell.carry.filled, .cell.carry.target { background-color: var(--blue-soft); }
+.cell.carry.target { border-bottom-color: var(--grid); }
+.cell.dim { color: #d4d4d4; }
 .cell.top.struck { color: #94a3b8; }
 .cell.top.struck::after {
   content: ""; position: absolute; left: 18%; right: 18%; top: 50%; border-top: 4px solid var(--bad); transform: rotate(-20deg);
 }
-.cell.op { color: var(--muted); }
-.cell.rule { border-bottom: 4px solid var(--ink); }
+.cell.op { color: #d4d4d4; }
+.cell.rule { border-bottom: 3px solid #d4d4d4; }
 .cell.ans { font-size: calc(var(--cell) * .66); }
 .cell.target {
   background: var(--blue-soft); border-bottom: 4px solid var(--blue); border-radius: 8px;
   animation: pulse 1.2s ease-in-out infinite;
 }
 .cell.just { animation: pop .35s ease; color: var(--ok); }
-@keyframes pulse { 50% { background: #c7d6ff; } }
+@keyframes pulse { 50% { background-color: #c7d6ff; } }
 @keyframes pop { 0% { transform: scale(.6); } 60% { transform: scale(1.2); } 100% { transform: scale(1); } }
 
 /* ---- Panel ---- */
