@@ -1,9 +1,8 @@
 // Run with: node tests/engine.test.js
 // Solves thousands of generated problems by following the guided steps exactly
 // as the UI does, and checks the board ends up with the right answer.
-'use strict';
-var assert = require('assert');
-var Engine = require('../engine.js');
+import assert from 'assert';
+import Engine from '../engine.js';
 
 function simulate(problem) {
   var steps = Engine.buildSteps(problem);

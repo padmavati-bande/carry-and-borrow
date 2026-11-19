@@ -3,8 +3,19 @@
   "version": "1.0.0",
   "description": "Guided column addition and subtraction practice for kids",
   "private": true,
+  "type": "module",
   "scripts": {
-    "test": "node tests/engine.test.js",
-    "start": "python3 -m http.server 8000"
+    "test": "node tests/engine.test.js && node tests/reducer.test.js",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.3.0",
+    "vite": "^8.3.8"
+  },
+  "dependencies": {
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   }
 }

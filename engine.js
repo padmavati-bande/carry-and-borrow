@@ -4,7 +4,7 @@
  *
  * Columns are numbered from the right: col 0 = ones, 1 = tens, 2 = hundreds...
  */
-(function (root) {
+var Engine = (function () {
   'use strict';
 
   var PLACES = ['ones', 'tens', 'hundreds', 'thousands', 'ten-thousands'];
@@ -160,7 +160,7 @@
 
   function solution(p) { return String(p.op === 'add' ? p.a + p.b : p.a - p.b); }
 
-  root.Engine = {
+  var Engine = {
     PLACES: PLACES,
     MINUS: MINUS,
     digitsOf: digitsOf,
@@ -168,5 +168,7 @@
     buildSteps: buildSteps,
     solution: solution
   };
-  if (typeof module !== 'undefined' && module.exports) module.exports = root.Engine;
-})(typeof window !== 'undefined' ? window : globalThis);
+  return Engine;
+})();
+
+export default Engine;

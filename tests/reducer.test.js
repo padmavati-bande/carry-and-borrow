@@ -1,0 +1,77 @@
+// Run with: node tests/reducer.test.js
+// Checks the game state machine: wrong answers, the 3-miss reveal, step settle, and finish.
+import assert from 'assert';
+import { reducer, initialState } from '../src/game/reducer.js';
+
+const problem = { op: 'add', a: 27, b: 36, len: 2 }; // 27 + 36 = 63, needs a carry
+
+const start = reducer(initialState, { type: 'START', op: 'add', len: 2, problem });
+
+function type(state, str) {
+  let s = state;
+  for (const key of str) s = reducer(s, { type: 'PRESS', key });
+  return s;
+}
+
+// a wrong answer of the same length as the expected one
+const wrongFor = (exp) => exp.split('').map((c) => (c === '1' ? '2' : '1')).join('');
+
+// 1. three misses: hint on 2nd, reveal on 3rd, box cleared after each miss
+{
+  const exp = start.cur.steps[0].expected;
+  let s = type(start, wrongFor(exp));
+  assert.strictEqual(s.cur.mistakes, 1);
+  assert.strictEqual(s.cur.feedback.kind, 'err');
+  assert.strictEqual(s.cur.locked, true, 'locked while shake shows');
+  assert.strictEqual(s.cur.wrongPending, true);
+  s = reducer(s, { type: 'WRONG_CLEAR' });
+  assert.strictEqual(s.cur.buffer, '');
+  assert.strictEqual(s.cur.locked, false);
+
+  s = type(s, wrongFor(exp));
+  assert.ok(s.cur.feedback.text.startsWith('Hint: '), 'hint on 2nd miss');
+  s = reducer(s, { type: 'WRONG_CLEAR' });
+
+  s = type(s, wrongFor(exp));
+  assert.strictEqual(s.cur.wrongOnStep, 3);
+  assert.ok(s.cur.feedback.text.includes('The answer is ' + exp), 'reveal on 3rd miss');
+  assert.strictEqual(s.cur.stepIndex, 0, 'still on same step after misses');
+}
+
+// 2. correct step: settled board, then ADVANCE moves to next step
+{
+  const exp = start.cur.steps[0].expected;
+  let s = type(start, exp);
+  assert.strictEqual(s.cur.settle, true);
+  assert.strictEqual(s.cur.stepIndex, 1);
+  assert.strictEqual(s.cur.promptIndex, 0, 'question still shows old step while settled');
+  assert.strictEqual(s.cur.feedback.kind, 'ok');
+  s = reducer(s, { type: 'ADVANCE' });
+  assert.strictEqual(s.cur.settle, false);
+  assert.strictEqual(s.cur.locked, false);
+  assert.strictEqual(s.cur.promptIndex, 1);
+  assert.strictEqual(s.cur.feedback.text, '');
+}
+
+// 3. finish the whole problem with no mistakes: good +1, finished, screen stays play
+{
+  let s = start;
+  while (!s.cur.finished) {
+    const step = s.cur.steps[s.cur.stepIndex];
+    s = type(s, step.expected);
+    if (s.cur.settle && !s.cur.finished) s = reducer(s, { type: 'ADVANCE' });
+  }
+  assert.strictEqual(s.cur.finished, true);
+  assert.strictEqual(s.cur.mistakes, 0);
+  assert.strictEqual(s.game.good, 1);
+  assert.strictEqual(s.game.bad, 0);
+  assert.strictEqual(s.screen, 'play');
+}
+
+// 4. keys are ignored off the play screen
+{
+  const s = reducer(initialState, { type: 'PRESS', key: '1' });
+  assert.strictEqual(s, initialState);
+}
+
+console.log('OK - reducer: miss reveal, settle/advance, finish, off-screen keys.');

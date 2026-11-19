@@ -6,10 +6,14 @@ to fill, and checks each step as the child goes.
 
 ## Run it
 
-No build step and no dependencies. Either:
+Built with React and Vite.
 
-- open `index.html` in a browser, or
-- `python3 -m http.server 8000` in this folder, then visit http://localhost:8000
+```
+npm install
+npm run dev      # dev server, opens on http://localhost:5173
+npm run build    # static site in dist/ (GitHub Pages ready, relative base)
+npm run preview  # serve dist/ locally
+```
 
 ## How it works
 
@@ -25,17 +29,24 @@ No build step and no dependencies. Either:
 
 | File | Purpose |
 | --- | --- |
-| `engine.js` | Problem generator and step builder (no DOM, unit-testable) |
-| `app.js` | Screens, board drawing and input handling |
+| `engine.js` | Problem generator and step builder (no DOM, ES module) |
+| `src/game/reducer.js` | Game state logic: input, misses, settle, finish (no DOM) |
+| `src/game/board.js` | Board layout as data (rows, cells, classes) |
+| `src/game/view.js` | Helpers: active step, typed digits, target cells |
+| `src/hooks/useGame.js` | React hook: reducer plus timers and keyboard |
+| `src/components/` | `StartScreen`, `PlayScreen`, `DoneScreen`, `Board`, `Cell`, `Keypad` |
+| `src/App.jsx`, `src/main.jsx` | App shell and mount point |
 | `style.css` | Look and layout (grid-paper background, responsive) |
-| `index.html` | Page structure |
-| `tests/engine.test.js` | Solves thousands of generated problems step by step |
+| `index.html` | Page shell with `#root` |
 
 ## Tests
 
 ```
-node tests/engine.test.js
+npm test
 ```
+
+Runs `tests/engine.test.js` (thousands of generated problems solved step by step)
+and `tests/reducer.test.js` (miss reveal, step settle, finish).
 
 ## Ideas for later
 
