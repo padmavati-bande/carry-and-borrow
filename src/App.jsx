@@ -2,6 +2,7 @@ import { useGame } from './hooks/useGame.js';
 import { TOTAL } from './game/reducer.js';
 import StartScreen from './components/StartScreen.jsx';
 import PlayScreen from './components/PlayScreen.jsx';
+import Timer from './components/Timer.jsx';
 import DoneScreen from './components/DoneScreen.jsx';
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
     <>
       <header className="topbar">
         <h1>Carry &amp; Borrow</h1>
+        {screen === 'play' && game.timed && <Timer elapsed={cur.elapsed} limit={game.limit} />}
         {screen === 'play' && (
           <div className="chips">
             <span className="chip good">&#10003; {game.good}</span>
@@ -27,7 +29,7 @@ export default function App() {
           <PlayScreen game={game} cur={cur} onPress={press} onBackspace={backspace} onNext={next} />
         )}
         {screen === 'done' && (
-          <DoneScreen game={game} onAgain={() => start(game.op, game.len)} onSettings={showStart} />
+          <DoneScreen game={game} onAgain={() => start(game.op, game.len, game.timed, game.limit)} onSettings={showStart} />
         )}
       </main>
     </>

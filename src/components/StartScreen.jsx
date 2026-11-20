@@ -6,6 +6,10 @@ const LENS = [['2', '2 digits'], ['3', '3 digits'], ['4', '4 digits']];
 export default function StartScreen({ onStart }) {
   const [op, setOp] = useState('add');
   const [len, setLen] = useState('2');
+  const [timed, setTimed] = useState(false);
+  const [secs, setSecs] = useState('60');
+  const n = parseInt(secs, 10);
+  const secsOk = /^\d+$/.test(secs) && n >= 1 && n <= 600;
   return (
     <section id="start" className="card">
       <h2>Add and subtract with carrying</h2>
@@ -45,8 +49,21 @@ export default function StartScreen({ onStart }) {
         ))}
       </fieldset>
 
+      <fieldset>
+        <legend>Clock</legend>
+        <div className="clock-row">
+          <label className="choice">
+            <input type="checkbox" checked={timed} onChange={() => setTimed(!timed)} /><span>Timed</span>
+          </label>
+          <label className="secs">
+            <input type="text" inputMode="numeric" value={secs} disabled={!timed} onChange={(e) => setSecs(e.target.value.replace(/\D/g, ''))} />
+            <span>s</span>
+          </label>
+        </div>
+      </fieldset>
+
       <p className="muted">10 problems. The page asks one small question at a time and lights up the box to fill.</p>
-      <button type="button" id="start-btn" className="btn primary" onClick={() => onStart(op, parseInt(len, 10))}>&#9654; Start</button>
+      <button type="button" id="start-btn" className="btn primary" disabled={timed && !secsOk} onClick={() => onStart(op, parseInt(len, 10), timed, timed ? n : 60)}>&#9654; Start</button>
     </section>
   );
 }

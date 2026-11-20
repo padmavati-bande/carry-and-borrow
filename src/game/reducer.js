@@ -12,6 +12,8 @@ export function newCur(problem) {
     stepIndex: 0,
     promptIndex: 0,     // step whose question is shown (lags stepIndex while settled)
     mistakes: 0,
+    elapsed: 0,        // seconds on this problem (timed mode)
+    timedOut: false,
     wrongOnStep: 0,
     buffer: '',
     locked: false,
@@ -78,7 +80,7 @@ export function reducer(state, action) {
     case 'START':
       return {
         screen: 'play',
-        game: { op: action.op, len: action.len, index: 1, good: 0, bad: 0 },
+        game: { op: action.op, len: action.len, index: 1, good: 0, bad: 0, timed: !!action.timed, limit: action.limit },
         cur: newCur(action.problem)
       };
 
@@ -87,6 +89,14 @@ export function reducer(state, action) {
 
     case 'FINISH':
       return { ...state, screen: 'done' };
+
+    case 'TICK': {
+      if (!state.game || !state.game.timed || !cur || cur.finished) return state;
+      const elapsed = cur.elapsed + 1;
+      if (elapsed < state.game.limit) return { ...state, cur: { ...cur, elapsed } };
+      // time up: problem ends, no good/bad change
+      return { ...state, cur: { ...cur, elapsed, timedOut: true, finished: true, locked: true, settle: false, buffer: '', wrongPending: false, feedback: { text: 'Time is up.', kind: 'err' } } };
+    }
 
     case 'SHOW_START':
       return { ...state, screen: 'start' };

@@ -31,6 +31,15 @@ export function useGame() {
 
   // keyboard input, only while the play screen shows
   const screen = state.screen;
+  const timed = !!(state.game && state.game.timed);
+  const index = state.game ? state.game.index : 0;
+
+  // timed mode: one tick per second; restarts for each problem
+  useEffect(() => {
+    if (screen !== 'play' || !timed) return undefined;
+    const t = setInterval(() => dispatch({ type: 'TICK' }), 1000);
+    return () => clearInterval(t);
+  }, [screen, timed, index]);
   useEffect(() => {
     if (screen !== 'play') return undefined;
     function onKey(ev) {
@@ -44,7 +53,7 @@ export function useGame() {
 
   return {
     state,
-    start: (op, len) => dispatch({ type: 'START', op, len, problem: makeProblem(op, len) }),
+    start: (op, len, timed, limit) => dispatch({ type: 'START', op, len, timed, limit, problem: makeProblem(op, len) }),
     next: () => {
       const g = state.game;
       if (g.index >= TOTAL) dispatch({ type: 'FINISH' });

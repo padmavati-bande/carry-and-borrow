@@ -11,7 +11,7 @@ function prompt(game, cur) {
     return {
       title: 'Problem ' + game.index + ' of ' + TOTAL,
       question: p.a + ' ' + sym(p.op) + ' ' + p.b + ' = ' + Engine.solution(p),
-      note: cur.mistakes === 0 ? 'No mistakes. Brilliant!' : 'You got it! Try for no mistakes on the next one.'
+      note: cur.timedOut ? '' : cur.mistakes === 0 ? 'No mistakes. Brilliant!' : 'You got it! Try for no mistakes on the next one.'
     };
   }
   const step = cur.steps[cur.promptIndex];

@@ -93,4 +93,24 @@ const wrongFor = (exp) => exp.split('').map((c) => (c === '1' ? '2' : '1')).join
 assert.strictEqual(reducer(start, { type: 'FINISH' }).screen, 'done');
 assert.strictEqual(reducer(start, { type: 'SHOW_START' }).screen, 'start');
 
+// 8. timed mode: 60 ticks end the problem, no good/bad change; off mode ignores ticks
+{
+  let s = reducer(initialState, { type: 'START', op: 'add', len: 2, problem, timed: true, limit: 60 });
+  assert.strictEqual(s.game.timed, true);
+  for (let i = 0; i < 59; i++) s = reducer(s, { type: 'TICK' });
+  assert.strictEqual(s.cur.finished, false);
+  assert.strictEqual(s.cur.elapsed, 59);
+  s = reducer(s, { type: 'TICK' });
+  assert.strictEqual(s.cur.finished, true);
+  assert.strictEqual(s.cur.timedOut, true);
+  assert.strictEqual(s.cur.feedback.text, 'Time is up.');
+  assert.strictEqual(s.game.good, 0);
+  assert.strictEqual(s.game.bad, 0);
+  assert.strictEqual(reducer(s, { type: 'TICK' }), s, 'ticks ignored after finish');
+  assert.strictEqual(reducer(start, { type: 'TICK' }), start, 'untimed ignores ticks');
+  let t = reducer(initialState, { type: 'START', op: 'add', len: 2, problem, timed: true, limit: 5 });
+  for (let i = 0; i < 5; i++) t = reducer(t, { type: 'TICK' });
+  assert.strictEqual(t.cur.timedOut, true, 'custom limit of 5 ends on 5th tick');
+}
+
 console.log('OK - reducer: miss reveal, settle/advance, finish, off-screen keys.');
