@@ -55,6 +55,12 @@ const cell = (cells, key) => cells.find((c) => c.key === key);
   assert.ok(cell(cells, 'mark-1'), 'subtraction has a borrow mark row');
 }
 
+// zero digit in the top number renders as 0 (305 - 168, middle column)
+{
+  const cur = newCur({ op: 'sub', a: 305, b: 168, len: 3 });
+  assert.strictEqual(cell(boardCells(cur).cells, 'top-1').text, 0);
+}
+
 // dim: digits outside the active column fade
 {
   const cur = newCur({ op: 'add', a: 58, b: 67, len: 2 });

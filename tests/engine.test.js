@@ -21,14 +21,14 @@ function simulate(problem) {
   return cols.map(function (c) { return ans[c]; }).join('');
 }
 
-var counts = { add: 0, sub: 0 };
+var counts = { add: 0, sub: 0 }, zeros = 0;
 ['add', 'sub'].forEach(function (op) {
   [2, 3, 4].forEach(function (len) {
     for (var i = 0; i < 1500; i++) {
       var p = Engine.generateProblem(op, len);
       assert.strictEqual(String(p.a).length, len);
       assert.strictEqual(String(p.b).length, len);
-      assert.ok(String(p.a).indexOf('0') === -1 && String(p.b).indexOf('0') === -1, 'no zero digits');
+      if (/0/.test(String(p.a) + String(p.b))) zeros++;
       if (op === 'sub') assert.ok(p.a > p.b);
       var got = simulate(p);
       assert.strictEqual(got, Engine.solution(p), op + ' ' + p.a + ' ' + p.b + ' -> ' + got);
@@ -43,6 +43,7 @@ var counts = { add: 0, sub: 0 };
     }
   });
 });
+assert.ok(zeros > 0, 'generator produces zero digits');
 
 // A few fixed examples
 function steps(op, a, b) { return Engine.buildSteps({ op: op, a: a, b: b, len: String(a).length }); }
@@ -54,6 +55,7 @@ assert.strictEqual(steps('sub', 52, 28)[2].expected, '2');   // 5 - 2 - 1 (borro
 assert.strictEqual(steps('sub', 94, 59).length, 3);          // no separate 9 - 1 step
 assert.strictEqual(simulate({ op: 'sub', a: 94, b: 59, len: 2 }), '35');
 assert.strictEqual(simulate({ op: 'sub', a: 325, b: 147, len: 3 }), '178'); // chained borrow
+assert.strictEqual(simulate({ op: 'sub', a: 305, b: 168, len: 3 }), '137'); // borrow across zero
 assert.strictEqual(steps('add', 58, 67)[0].expected, '15');  // 8 + 7
 assert.strictEqual(steps('add', 58, 67)[1].expected, '12');  // 5 + 6 + 1
 

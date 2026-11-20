@@ -51,6 +51,5 @@ and `tests/reducer.test.js` (miss reveal, step settle, finish).
 
 ## Ideas for later
 
-- Borrowing across a zero (e.g. 305 - 168); problems currently avoid zero digits.
 - Timed mode, a sound on correct answers, saved best scores.
 - A "no hints" mode for older children.

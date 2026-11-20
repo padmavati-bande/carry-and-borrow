@@ -12,10 +12,10 @@ function randInt(lo, hi, rng) {
   return lo + Math.floor(rng() * (hi - lo + 1));
 }
 
-// A number with `len` digits, none of them zero (keeps borrowing simple).
+// A number with `len` digits. First digit 1-9 (no leading zero), others 0-9.
 function randomNumber(len, rng) {
-  let n = 0;
-  for (let i = 0; i < len; i++) n = n * 10 + randInt(1, 9, rng);
+  let n = randInt(1, 9, rng);
+  for (let i = 1; i < len; i++) n = n * 10 + randInt(0, 9, rng);
   return n;
 }
 
