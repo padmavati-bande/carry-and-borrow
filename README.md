@@ -25,6 +25,7 @@ git config core.hooksPath .githooks  # once per clone: pushing main publishes di
   shows the answer so the child is never stuck.
 - A problem counts as a tick only if it was finished with no mistakes.
 - Works with the on-screen keypad or the keyboard (digits and Backspace).
+- Installable as an app (icon "Math"). No offline cache: needs a connection to load.
 
 ## Files
 
@@ -39,6 +40,8 @@ git config core.hooksPath .githooks  # once per clone: pushing main publishes di
 | `src/App.jsx`, `src/main.jsx` | App shell and mount point |
 | `style.css` | Look and layout (grid-paper background, responsive) |
 | `index.html` | Page shell with `#root` |
+| `vite.config.js` | Build config and PWA manifest (`vite-plugin-pwa`) |
+| `public/` | Static files copied as-is: install icons (`icons/`, `icon.svg`) |
 
 ## Tests
 
