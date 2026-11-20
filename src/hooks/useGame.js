@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef } from 'react';
+import { useEffect, useReducer } from 'react';
 import Engine from '../../engine.js';
 import { reducer, initialState, TOTAL } from '../game/reducer.js';
 
@@ -30,17 +30,17 @@ export function useGame() {
   }, [wrongPending]);
 
   // keyboard input, only while the play screen shows
-  const screenRef = useRef(state.screen);
-  screenRef.current = state.screen;
+  const screen = state.screen;
   useEffect(() => {
+    if (screen !== 'play') return undefined;
     function onKey(ev) {
-      if (screenRef.current !== 'play' || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
       if (/^[0-9]$/.test(ev.key)) { dispatch({ type: 'PRESS', key: ev.key }); ev.preventDefault(); }
       else if (ev.key === 'Backspace') { dispatch({ type: 'BACKSPACE' }); ev.preventDefault(); }
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, []);
+  }, [screen]);
 
   return {
     state,

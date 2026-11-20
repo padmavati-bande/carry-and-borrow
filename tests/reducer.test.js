@@ -74,4 +74,23 @@ const wrongFor = (exp) => exp.split('').map((c) => (c === '1' ? '2' : '1')).join
   assert.strictEqual(s, initialState);
 }
 
+// 5. backspace removes the last typed digit while the box is open
+{
+  const s = reducer(type(start, '1'), { type: 'BACKSPACE' });
+  assert.strictEqual(s.cur.buffer, '');
+}
+
+// 6. next moves the game on with a new problem
+{
+  const next = { op: 'add', a: 14, b: 25, len: 2 };
+  const s = reducer(start, { type: 'NEXT', problem: next });
+  assert.strictEqual(s.game.index, 2);
+  assert.strictEqual(s.cur.problem, next);
+  assert.strictEqual(s.cur.stepIndex, 0);
+}
+
+// 7. finish and back to start screens
+assert.strictEqual(reducer(start, { type: 'FINISH' }).screen, 'done');
+assert.strictEqual(reducer(start, { type: 'SHOW_START' }).screen, 'start');
+
 console.log('OK - reducer: miss reveal, settle/advance, finish, off-screen keys.');

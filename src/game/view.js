@@ -2,6 +2,15 @@
 
 export function activeStep(cur) { return cur.steps[cur.stepIndex]; }
 
+// The column the step is about: lowest answer target (extra col -1 counts as 0),
+// or the borrow target when the step has no answer cell.
+export function activeCol(cur) {
+  const ts = activeStep(cur).targets;
+  const ans = ts.filter((t) => t.row === 'ans');
+  const pick = ans.length ? ans : ts;
+  return Math.max(0, Math.min(...pick.map((t) => t.col)));
+}
+
 // Typed digits fill the target cells in order. 8 + 8: type 1 then 6 ->
 // the 1 goes under the 8, the 6 in the extra cell right of it. Then both move.
 export function bufferFor(cur, row, col) {

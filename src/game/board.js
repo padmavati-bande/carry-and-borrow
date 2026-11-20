@@ -1,6 +1,6 @@
 import Engine from '../../engine.js';
 import { sym } from '../utils.js';
-import { activeStep, bufferFor, wide, isTarget } from './view.js';
+import { activeCol, bufferFor, wide, isTarget } from './view.js';
 
 // Board layout as plain data: rows top to bottom, digits right to left.
 // Row order matches the old DOM order, so the grid lines up the same way.
@@ -9,12 +9,9 @@ export function boardCells(cur) {
   const da = Engine.digitsOf(p.a, len), db = Engine.digitsOf(p.b, len);
   const sub = p.op === 'sub', rule = sub ? '' : ' rule';
 
-  // digits outside the active column(s) fade
-  let tg = cur.finished ? [] : activeStep(cur).targets;
-  const ansTg = tg.filter((t) => t.row === 'ans');
-  // the active column is the lowest answer target (col -1 counts as col 0)
-  if (ansTg.length) tg = [{ col: Math.max(0, Math.min.apply(null, ansTg.map((t) => t.col))) }];
-  const dim = (col) => (!cur.finished && !tg.some((t) => t.col === col) ? ' dim' : '');
+  // digits outside the active column fade
+  const act = cur.finished ? null : activeCol(cur);
+  const dim = (col) => (!cur.finished && col !== act ? ' dim' : '');
   const shake = (row, col) => (cur.wrongPending && isTarget(cur, row, col) ? ' shake' : '');
 
   const cells = [];
