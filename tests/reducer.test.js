@@ -132,3 +132,25 @@ assert.strictEqual(reducer(start, { type: 'SHOW_START' }).screen, 'start');
 }
 
 console.log('OK - reducer: miss reveal, settle/advance, finish, off-screen keys.');
+
+// 6. multiply: a carry flies from its partial row (pp0) up to the carry row
+{
+  const mul = reducer(initialState, { type: 'START', op: 'mul', len: 2, problem: { op: 'mul', a: 16, b: 2, len: 2 } });
+  const s = type(mul, mul.cur.steps[0].expected);
+  assert.strictEqual(s.cur.view.fly, 1);
+  assert.strictEqual(s.cur.view.flySrc, 'pp0');
+  assert.strictEqual(s.cur.view.flyTo, 'carry');
+  assert.strictEqual(s.cur.view.flySrcCol, 1); // carry digit typed at pp0, col 1
+  assert.ok(!mul.cur.steps[0].targets.some((t) => t.row === 'carry')); // typed at the bottom only
+}
+
+// 7. multiply add phase: a carry flies from the answer row up to the acarry row
+{
+  let s = reducer(initialState, { type: 'START', op: 'mul', len: 2, problem: { op: 'mul', a: 99, b: 99, len: 2 } });
+  const k = s.cur.steps.findIndex((st) => st.effects.some((e) => e.kind === 'acarry'));
+  assert.ok(k >= 0);
+  for (let n = 0; s.cur.stepIndex < k && n < 100; n++) s = reducer(type(s, s.cur.steps[s.cur.stepIndex].expected), { type: 'ADVANCE' });
+  s = type(s, s.cur.steps[k].expected);
+  assert.strictEqual(s.cur.view.flyTo, 'acarry');
+  assert.strictEqual(s.cur.view.flySrc, 'ans');
+}

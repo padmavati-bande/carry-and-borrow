@@ -29,6 +29,8 @@ function applyEffects(view, step) {
   const v = { ...view, ans: { ...view.ans }, carry: { ...view.carry }, struck: { ...view.struck }, mark: { ...view.mark },
     pp: { ...view.pp }, acarry: { ...view.acarry }, cstruck: { ...view.cstruck }, astruck: { ...view.astruck } };
   const cols = [];
+  // a carry that flies: dst col, dst row, source row and column
+  const flyTo = (to, e) => { v.fly = e.col; v.flyTo = to; v.flySrc = e.src; v.flySrcCol = e.srcCol; };
   step.effects.forEach((e) => {
     if (!['borrow', 'pp', 'use', 'mcarry', 'acarry'].includes(e.kind)) cols.push(e.col);
     if (e.kind === 'ans') v.ans[e.col] = e.value;
@@ -36,8 +38,8 @@ function applyEffects(view, step) {
     else if (e.kind === 'newTop') { v.carry[e.col] = e.value; v.struck[e.col] = true; }
     else if (e.kind === 'borrow') v.mark[e.col] = e.value;
     else if (e.kind === 'pp') v.pp[e.row + ':' + e.col] = e.value;
-    else if (e.kind === 'mcarry') v.carry[e.col] = e.value;
-    else if (e.kind === 'acarry') v.acarry[e.col] = e.value;
+    else if (e.kind === 'mcarry') { v.carry[e.col] = e.value; flyTo('carry', e); }
+    else if (e.kind === 'acarry') { v.acarry[e.col] = e.value; flyTo('acarry', e); }
     else if (e.kind === 'use') {
       // strike the carry: its value moves to the crossed-out slot of the same column
       const live = e.row === 'acarry' ? v.acarry : v.carry;

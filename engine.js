@@ -142,8 +142,8 @@ function buildMulSteps(p) {
       let success;
       if (carry) effects.push({ kind: 'use', row: 'carry', col: i });
       if (prod >= 10 && !last) {
-        effects.push(put(j, col, prod % 10), { kind: 'mcarry', col: i + 1, value: String(Math.floor(prod / 10)) });
-        targets.push({ row: 'carry', col: i + 1 }, { row: rowOf(j), col });
+        effects.push(put(j, col, prod % 10), { kind: 'mcarry', col: i + 1, value: String(Math.floor(prod / 10)), src: rowOf(j), srcCol: col + 1 });
+        targets.push({ row: rowOf(j), col: col + 1 }, { row: rowOf(j), col });
         written[j][col] = prod % 10;
         success = 'Write the ' + (prod % 10) + ' and carry the ' + Math.floor(prod / 10) + ' above the ' + PLACES[i + 1] + '.';
       } else if (prod >= 10) {
@@ -190,8 +190,8 @@ function buildMulSteps(p) {
         targets.push({ row: 'ans', col: c });
         success = 'Write the ' + sum + '.';
       } else {
-        effects.push({ kind: 'ans', col: c, value: String(sum % 10) }, { kind: 'acarry', col: c + 1, value: String(Math.floor(sum / 10)) });
-        targets.push({ row: 'acarry', col: c + 1 }, { row: 'ans', col: c });
+        effects.push({ kind: 'ans', col: c, value: String(sum % 10) }, { kind: 'acarry', col: c + 1, value: String(Math.floor(sum / 10)), src: 'ans', srcCol: c + 1 });
+        targets.push({ row: 'ans', col: c + 1 }, { row: 'ans', col: c });
         success = 'Write the ' + (sum % 10) + ' and carry the ' + Math.floor(sum / 10) + ' to the ' + PLACES[c + 1] + '.';
       }
       steps.push({

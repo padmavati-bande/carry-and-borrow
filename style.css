@@ -116,7 +116,7 @@ legend { font-weight: 700; margin-bottom: 8px; padding: 0; }
 @keyframes shake { 20%,60% { transform: translateX(-8px); } 40%,80% { transform: translateX(8px); } }
 /* carry 1 flies up from the answer row to the carry cell */
 .cell.fly { z-index: 3; animation: fly .4s ease-out; }
-@keyframes fly { from { transform: translate(calc(var(--fx, 0) * var(--cell)), calc(var(--cell) * 3)); } to { transform: none; } }
+@keyframes fly { from { transform: translate(calc(var(--fx, 0) * var(--cell)), calc(var(--cell) * var(--fy, 3))); } to { transform: none; } }
 .cell.slide { animation: slide .3s ease-out; }
 @keyframes slide { from { transform: translateX(var(--cell)); } to { transform: none; } }
 

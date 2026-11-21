@@ -17,16 +17,24 @@ function mulCells(cur) {
   const shake = (row, col) => (cur.wrongPending && isTarget(cur, row, col) ? ' shake' : '');
   const cells = [];
   const spacer = (key) => cells.push({ key, cls: 'spacer', text: '' });
+  // grid row index (top = 0) of a named mul row
+  const acIdx = (hasCarry ? 1 : 0) + 2;
+  const rowIdx = (name) => (name === 'carry' ? 0 : name === 'acarry' ? acIdx
+    : name === 'ans' ? acIdx + (hasAcarry ? 1 : 0) + (len >= 2 ? len : 0)
+    : acIdx + (hasAcarry ? 1 : 0) + Number(name.slice(2)));
   const carryRow = (row, live, old, key) => {
     spacer(key);
     for (let c = cols - 1; c >= 0; c--) {
       const tgt = isTarget(cur, row, c);
       const text = tgt ? bufferFor(cur, row, c) : (live[c] || '');
+      const flies = v.flyTo === row && v.fly === c; // mul carry flies from the digit it was typed in
       cells.push({
         key: row + '-' + c,
-        cls: 'carry' + (text ? ' filled' : '') + (tgt ? ' target' : '') + shake(row, c),
+        cls: 'carry' + (text ? ' filled' : '') + (tgt ? ' target' : '') + (flies ? ' fly' : '') + shake(row, c),
         text,
-        old: old[c] || ''
+        old: old[c] || '',
+        // start offset from the source cell: rows down, columns right
+        style: flies ? { '--fy': String(rowIdx(v.flySrc) - rowIdx(row)), '--fx': String(c - v.flySrcCol) } : undefined
       });
     }
   };
