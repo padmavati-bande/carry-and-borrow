@@ -140,6 +140,15 @@ legend { font-weight: 700; margin-bottom: 8px; padding: 0; }
 
 #next-btn { margin: 4px 0 8px; }
 
+/* Phone: no empty hint/note space above the keypad; bigger cells */
+@media (max-width: 480px) {
+  :root { --cell: clamp(46px, 17vw, 84px); }
+  .note { min-height: 0; font-size: .85rem; }
+  .question { font-size: 1.1rem; }
+  .feedback { min-height: 0; margin: 0; font-size: .85rem; }
+  .keypad { margin-top: 4px; }
+}
+
 /* ---- Timer ---- */
 .clock-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .clock-row .choice { margin: 0; }
