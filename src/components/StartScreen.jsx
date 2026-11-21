@@ -1,12 +1,13 @@
 import { useState } from 'react';
 
 const OPS = [['add', 'Addition'], ['sub', 'Subtraction'], ['mix', 'Both']];
-const LENS = [['2', '2 digits'], ['3', '3 digits'], ['4', '4 digits']];
+const LENS = [['1', '1 digit'], ['2', '2 digits'], ['3', '3 digits'], ['4', '4 digits']];
 
 export default function StartScreen({ onStart }) {
   const [op, setOp] = useState('add');
   const [len, setLen] = useState('2');
   const [timed, setTimed] = useState(false);
+  const [carry, setCarry] = useState(true);
   const [secs, setSecs] = useState('60');
   const n = parseInt(secs, 10);
   const secsOk = /^\d+$/.test(secs) && n >= 1 && n <= 600;
@@ -36,7 +37,7 @@ export default function StartScreen({ onStart }) {
         <legend>What do you want to practise?</legend>
         {OPS.map(([v, label]) => (
           <label className="choice" key={v}>
-            <input type="radio" name="op" value={v} checked={op === v} onChange={() => setOp(v)} /><span>{label}</span>
+            <input type="radio" name="op" value={v} checked={op === v} onChange={() => { setOp(v); if (v !== 'add' && carry && len === '1') setLen('2'); }} /><span>{label}</span>
           </label>
         ))}
       </fieldset>
@@ -44,9 +45,16 @@ export default function StartScreen({ onStart }) {
         <legend>How big are the numbers?</legend>
         {LENS.map(([v, label]) => (
           <label className="choice" key={v}>
-            <input type="radio" name="len" value={v} checked={len === v} onChange={() => setLen(v)} /><span>{label}</span>
+            <input type="radio" name="len" value={v} checked={len === v} disabled={v === '1' && carry && op !== 'add'} onChange={() => setLen(v)} /><span>{label}</span>
           </label>
         ))}
+      </fieldset>
+
+      <fieldset>
+        <legend>Rules</legend>
+        <label className="choice">
+          <input type="checkbox" checked={carry} onChange={() => { const c = !carry; setCarry(c); if (c && op !== 'add' && len === '1') setLen('2'); }} /><span>Carry and borrow</span>
+        </label>
       </fieldset>
 
       <fieldset>
@@ -63,7 +71,7 @@ export default function StartScreen({ onStart }) {
       </fieldset>
 
       <p className="muted">10 problems. The page asks one small question at a time and lights up the box to fill.</p>
-      <button type="button" id="start-btn" className="btn primary" disabled={timed && !secsOk} onClick={() => onStart(op, parseInt(len, 10), timed, timed ? n : 60)}>&#9654; Start</button>
+      <button type="button" id="start-btn" className="btn primary" disabled={timed && !secsOk} onClick={() => onStart(op, parseInt(len, 10), timed, timed ? n : 60, carry)}>&#9654; Start</button>
     </section>
   );
 }

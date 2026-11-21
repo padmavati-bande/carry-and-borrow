@@ -80,7 +80,7 @@ export function reducer(state, action) {
     case 'START':
       return {
         screen: 'play',
-        game: { op: action.op, len: action.len, index: 1, good: 0, bad: 0, timed: !!action.timed, limit: action.limit },
+        game: { op: action.op, len: action.len, index: 1, good: 0, bad: 0, timed: !!action.timed, limit: action.limit, carry: action.carry !== false },
         cur: newCur(action.problem)
       };
 

@@ -29,7 +29,7 @@ export default function App() {
           <PlayScreen game={game} cur={cur} onPress={press} onBackspace={backspace} onNext={next} />
         )}
         {screen === 'done' && (
-          <DoneScreen game={game} onAgain={() => start(game.op, game.len, game.timed, game.limit)} onSettings={showStart} />
+          <DoneScreen game={game} onAgain={() => start(game.op, game.len, game.timed, game.limit, game.carry)} onSettings={showStart} />
         )}
       </main>
     </>

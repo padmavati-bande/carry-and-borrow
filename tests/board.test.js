@@ -84,4 +84,25 @@ const cell = (cells, key) => cells.find((c) => c.key === key);
   assert.ok(cells.every((c) => !c.cls.includes('target') && !c.cls.includes('dim')));
 }
 
+// 1-digit subtraction 9 - 3: no carry row, no mark row, rule under the bottom number
+{
+  const cur = newCur({ op: 'sub', a: 9, b: 3, len: 1 });
+  const { cells, rows, ansRow } = boardCells(cur);
+  assert.strictEqual(rows, 3);
+  assert.strictEqual(ansRow, 2);
+  assert.strictEqual(keys(cells).filter((k) => k.startsWith('carry') || k.startsWith('mark') || k === 'op2').length, 0);
+  assert.ok(cell(cells, 'bottom-0').cls.includes('rule'), 'rule sits under bottom number');
+  assert.ok(cell(cells, 'ans-0'), 'answer cell present');
+}
+
+// 2-digit subtraction with no borrow (47 - 12): same slim layout as 1-digit
+{
+  const cur = newCur({ op: 'sub', a: 47, b: 12, len: 2 });
+  const { cells, rows, ansRow } = boardCells(cur);
+  assert.strictEqual(rows, 3);
+  assert.strictEqual(ansRow, 2);
+  assert.strictEqual(keys(cells).filter((k) => k.startsWith('carry') || k.startsWith('mark') || k === 'op2').length, 0);
+  assert.ok(cell(cells, 'bottom-0').cls.includes('rule'), 'rule sits under bottom number');
+}
+
 console.log('OK - board: layout, highlights, typed digits, dim, shake, finished.');

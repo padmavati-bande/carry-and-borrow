@@ -6,6 +6,9 @@ import { reducer, initialState } from '../src/game/reducer.js';
 const problem = { op: 'add', a: 27, b: 36, len: 2 }; // 27 + 36 = 63, needs a carry
 
 const start = reducer(initialState, { type: 'START', op: 'add', len: 2, problem });
+// Carry flag is stored from START and defaults to on.
+assert.strictEqual(reducer(initialState, { type: 'START', op: 'add', len: 2, problem, carry: false }).game.carry, false);
+assert.strictEqual(start.game.carry, true);
 
 function type(state, str) {
   let s = state;
