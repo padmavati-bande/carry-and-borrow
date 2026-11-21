@@ -60,4 +60,5 @@ For developers and AI agents: see `CLAUDE.md` for the architecture and how to ad
 ## Ideas for later
 
 - Timed mode, a sound on correct answers, saved best scores.
+- Watch mode: the system types each answer, slowly. One problem at a time; press Next.
 - A "no hints" mode for older children.

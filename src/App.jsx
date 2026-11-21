@@ -27,7 +27,7 @@ export default function App() {
       <main>
         {screen === 'start' && <StartScreen onStart={start} />}
         {screen === 'play' && (
-          <PlayScreen game={game} cur={cur} onPress={press} onBackspace={backspace} onNext={next} />
+          <PlayScreen game={game} cur={cur} onPress={press} onBackspace={backspace} onNext={next} onStop={showStart} />
         )}
         {screen === 'done' && (
           <DoneScreen game={game} onAgain={() => start(settingsOf(game))} onSettings={showStart} />

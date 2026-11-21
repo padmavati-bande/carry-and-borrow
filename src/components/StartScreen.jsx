@@ -12,9 +12,11 @@ export default function StartScreen({ onStart }) {
   const [len, setLen] = useState('2');
   const [timed, setTimed] = useState(false);
   const [carry, setCarry] = useState(true);
+  const [watch, setWatch] = useState(false);
   const [secs, setSecs] = useState('60');
   const n = parseInt(secs, 10);
   const secsOk = /^\d+$/.test(secs) && n >= 1 && n <= 600;
+  const useTimer = timed && !watch; // watch mode has no clock
   return (
     <section id="start" className="card">
       <h2>Add, subtract, multiply and divide</h2>
@@ -81,17 +83,24 @@ export default function StartScreen({ onStart }) {
         <legend>Clock</legend>
         <div className="clock-row">
           <label className="choice">
-            <input type="checkbox" checked={timed} onChange={() => setTimed(!timed)} /><span>Timed</span>
+            <input type="checkbox" checked={timed} disabled={watch} onChange={() => setTimed(!timed)} /><span>Timed</span>
           </label>
           <label className="secs">
-            <input type="text" inputMode="numeric" value={secs} disabled={!timed} onChange={(e) => setSecs(e.target.value.replace(/\D/g, ''))} />
+            <input type="text" inputMode="numeric" value={secs} disabled={!useTimer} onChange={(e) => setSecs(e.target.value.replace(/\D/g, ''))} />
             <span>s</span>
           </label>
         </div>
       </fieldset>
 
+      <fieldset>
+        <legend>Watch</legend>
+        <label className="choice">
+          <input type="checkbox" checked={watch} onChange={() => setWatch(!watch)} /><span>Watch the system solve it, slowly</span>
+        </label>
+      </fieldset>
+
       <p className="muted">10 problems. The page asks one small question at a time and lights up the box to fill.</p>
-      <button type="button" id="start-btn" className="btn primary" disabled={timed && !secsOk} onClick={() => onStart({ op, len: parseInt(len, 10), timed, limit: timed ? n : 60, carry })}>&#9654; Start</button>
+      <button type="button" id="start-btn" className="btn primary" disabled={useTimer && !secsOk} onClick={() => onStart({ op, len: parseInt(len, 10), timed: useTimer, limit: useTimer ? n : 60, carry, watch })}>&#9654; Start</button>
     </section>
   );
 }

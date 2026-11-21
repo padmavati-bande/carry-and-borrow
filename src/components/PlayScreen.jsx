@@ -22,7 +22,7 @@ function prompt(game, cur) {
   };
 }
 
-export default function PlayScreen({ game, cur, onPress, onBackspace, onNext }) {
+export default function PlayScreen({ game, cur, onPress, onBackspace, onNext, onStop }) {
   const p = prompt(game, cur);
   const fb = cur.feedback;
   return (
@@ -38,6 +38,7 @@ export default function PlayScreen({ game, cur, onPress, onBackspace, onNext }) 
             {game.index >= TOTAL ? 'See my score →' : 'Next problem →'}
           </button>
         )}
+        {game.watch && <button type="button" id="stop-btn" className="btn" onClick={onStop}>Stop</button>}
         <Keypad onPress={onPress} onBackspace={onBackspace} />
       </div>
     </section>

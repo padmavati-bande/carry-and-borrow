@@ -16,11 +16,11 @@ function emptyView() {
 
 // The settings a game keeps. Start screen values go in, game settings come out.
 export function settingsFrom(s) {
-  return { op: s.op, len: s.len, timed: !!s.timed, limit: s.limit, carry: s.carry !== false };
+  return { op: s.op, len: s.len, timed: !!s.timed, limit: s.limit, carry: s.carry !== false, watch: !!s.watch };
 }
 
 export function settingsOf(game) {
-  return { op: game.op, len: game.len, timed: game.timed, limit: game.limit, carry: game.carry };
+  return { op: game.op, len: game.len, timed: game.timed, limit: game.limit, carry: game.carry, watch: game.watch };
 }
 
 export function newCur(problem) {
@@ -91,7 +91,7 @@ function submit(state) {
     const stepIndex = cur.stepIndex + 1;
     if (stepIndex >= cur.steps.length) {
       const clean = cur.mistakes === 0;
-      const game = { ...state.game, good: state.game.good + (clean ? 1 : 0), bad: state.game.bad + (clean ? 0 : 1) };
+      const game = state.game.watch ? state.game : { ...state.game, good: state.game.good + (clean ? 1 : 0), bad: state.game.bad + (clean ? 0 : 1) }; // watch mode does not score
       return {
         ...state,
         game,

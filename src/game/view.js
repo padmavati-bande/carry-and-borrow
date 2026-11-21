@@ -2,6 +2,12 @@
 
 export function activeStep(cur) { return cur.steps[cur.stepIndex]; }
 
+// Watch mode: the next digit the system types, or null when the answer is full.
+export function nextKey(cur) {
+  const exp = activeStep(cur).expected;
+  return cur.buffer.length < exp.length ? exp.charAt(cur.buffer.length) : null;
+}
+
 // The column the step is about: lowest answer target (extra col -1 counts as 0),
 // or the borrow target when the step has no answer cell.
 export function activeCol(cur) {

@@ -1,7 +1,8 @@
 // Run with: node tests/reducer.test.js
 // Checks the game state machine: wrong answers, the 3-miss reveal, step settle, and finish.
 import assert from 'assert';
-import { reducer, initialState } from '../src/game/reducer.js';
+import { reducer, initialState, settingsOf } from '../src/game/reducer.js';
+import { nextKey } from '../src/game/view.js';
 
 const problem = { op: 'add', a: 27, b: 36, len: 2 }; // 27 + 36 = 63, needs a carry
 
@@ -179,4 +180,24 @@ console.log('OK - reducer: miss reveal, settle/advance, finish, off-screen keys.
   s = type(s, s.cur.steps[k].expected);
   assert.strictEqual(s.cur.view.flyTo, 'acarry');
   assert.strictEqual(s.cur.view.flySrc, 'ans');
+}
+
+// Watch mode: the setting is kept, the next key comes from the answer, and nothing is scored.
+function solveAll(state) {
+  let s = state;
+  while (!s.cur.finished) {
+    s = type(s, s.cur.steps[s.cur.stepIndex].expected);
+    if (!s.cur.finished) s = reducer(s, { type: 'ADVANCE' });
+  }
+  return s;
+}
+{
+  const w = reducer(initialState, { type: 'START', op: 'add', len: 2, problem, watch: true });
+  assert.strictEqual(w.game.watch, true);
+  assert.strictEqual(settingsOf(w.game).watch, true);
+  assert.strictEqual(nextKey(w.cur), w.cur.steps[0].expected.charAt(0));
+  assert.strictEqual(nextKey({ ...w.cur, buffer: w.cur.steps[0].expected }), null);
+  const done = solveAll(w);
+  assert.strictEqual(done.game.good + done.game.bad, 0, 'watch does not score');
+  assert.strictEqual(solveAll(start).game.good, 1, 'normal game scores a clean problem');
 }
