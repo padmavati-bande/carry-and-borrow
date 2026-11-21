@@ -145,4 +145,57 @@ const cell = (cells, key) => cells.find((c) => c.key === key);
   ['top-0', 'top-1', 'bottom-0', 'bottom-1'].forEach((k) => assert.ok(cell(cells, k).cls.includes('dim'), k + ' dimmed'));
 }
 
+// division 92 ÷ 4: quotient row on top, divisor in the left column, product and remainder rows
+{
+  const cur = newCur({ op: 'div', a: 92, b: 4, len: 2 });
+  const { cells, cols, rows, ansRow } = boardCells(cur);
+  assert.strictEqual(cols, 3);
+  assert.strictEqual(rows, 6);
+  assert.strictEqual(ansRow, 5);
+  assert.strictEqual(cell(cells, 'top-2').text, '4', 'divisor sits left of the dividend');
+  assert.ok(cell(cells, 'top-2').cls.includes('divisor'));
+  assert.equal(cell(cells, 'top-1').text, 9);
+  assert.equal(cell(cells, 'top-0').text, 2);
+  assert.strictEqual(cell(cells, 'prod0-2').text, '−');
+  assert.ok(cell(cells, 'qt-1').cls.includes('target'), 'first step types the quotient tens digit');
+  assert.ok(!cell(cells, 'qt-0').cls.includes('target'));
+  assert.strictEqual(keys(cells).filter((k) => /^bd\d/.test(k)).length, 3, 'bd1 row has one cell per column');
+}
+
+// division 812 ÷ 4: a zero quotient digit still gets its own rows
+{
+  const { rows, cols } = boardCells(newCur({ op: 'div', a: 812, b: 4, len: 3 }));
+  assert.strictEqual(cols, 4);
+  assert.strictEqual(rows, 8);
+}
+
+// division 9999 ÷ 2: four quotient digits, the tallest board (13 rows)
+{
+  const { rows } = boardCells(newCur({ op: 'div', a: 9999, b: 2, len: 4 }));
+  assert.strictEqual(rows, 10);
+}
+
+// division: a dropped digit slides down from the dividend (fly class, distance in rows)
+{
+  const cur0 = newCur({ op: 'div', a: 92, b: 4, len: 2 });
+  const cur = { ...cur0, view: { ...cur0.view, pp: { 'bd1:0': '2' }, flyTo: 'bd1', fly: 0, flySrc: 'top', flySrcCol: 0 } };
+  const c = cell(boardCells(cur).cells, 'bd1-0');
+  assert.ok(c.cls.includes('fly'), 'dropped digit has fly class');
+  assert.strictEqual(c.style['--fy'], '-2', 'starts two rows above: top to bd1');
+  assert.strictEqual(c.style['--fx'], '0');
+}
+
+// division: a two-digit product fills its two target cells in order
+{
+  const cur = { ...newCur({ op: 'div', a: 92, b: 4, len: 2 }), stepIndex: 4 };
+  assert.strictEqual(activeStep(cur).expected, '12');
+  const one = { ...cur, buffer: '1' };
+  assert.strictEqual(bufferFor(one, 'prod1', 1), '1');
+  assert.strictEqual(bufferFor(one, 'prod1', 0), '');
+  const both = { ...cur, buffer: '12' };
+  assert.strictEqual(bufferFor(both, 'prod1', 1), '1');
+  assert.strictEqual(bufferFor(both, 'prod1', 0), '2');
+  assert.strictEqual(cell(boardCells(both).cells, 'prod1-0').text, '2');
+}
+
 console.log('OK - board: layout, highlights, typed digits, dim, shake, finished.');

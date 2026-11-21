@@ -110,6 +110,13 @@ function pickMul(len, rng, carry) {
   return (carry ? regroups(steps) : !mulCarries(steps)) ? { op: 'mul', a, b, len } : null;
 }
 
+// Division: a has len digits, b is one digit 2-9, and a >= b so the quotient has no leading zero.
+// The carry switch does not apply to division.
+function pickDiv(len, rng) {
+  const a = randomNumber(len, rng), b = randInt(2, 9, rng);
+  return a >= b ? { op: 'div', a, b, len } : null;
+}
+
 /*
  * op: a key of OPS. len: digits in each number (1-4).
  * requireCarry (default true): on = every problem needs at least one carry (add) or borrow (sub).
@@ -315,12 +322,88 @@ function buildSubSteps(p) {
   return steps;
 }
 
+// Long division plan: one entry per quotient digit. Used by the steps and by the board layout.
+// Starts at the shortest left part of the dividend that is >= b, so no leading zero is typed.
+export function divPlan(p) {
+  const { b, len } = p, da = digitsOf(p.a, len);
+  let idx = len - 1, n = da[idx];
+  while (n < b && idx > 0) { idx--; n = n * 10 + da[idx]; }
+  const parts = [];
+  let rem = 0;
+  for (let j = idx; j >= 0; j--) {
+    const cur = j === idx ? n : rem * 10 + da[j];
+    const q = Math.floor(cur / b), prod = q * b;
+    rem = cur - prod;
+    parts.push({ j, cur, q, prod, rem });
+  }
+  return parts;
+}
+
+/*
+ * Long division: quotient on top, then for each quotient digit a product step and a
+ * remainder step. Bringing down the next digit is part of the remainder step.
+ */
+function buildDivSteps(p) {
+  const { b, len } = p, da = digitsOf(p.a, len);
+  const parts = divPlan(p);
+  const steps = [];
+  parts.forEach(({ j, cur, q, prod, rem }, k) => {
+    const title = capitalize(PLACES[j]) + ' column';
+    const last = k === parts.length - 1;
+    steps.push(step({
+      title,
+      question: 'How many times does ' + b + ' go into ' + cur + '?',
+      expected: String(q),
+      hint: 'Count in ' + b + 's up to ' + cur + '. How many steps?',
+      success: b + ' goes into ' + cur + ' ' + q + ' times. Write the ' + q + ' on top.',
+      effects: [{ kind: 'pp', row: 'qt', col: j, value: String(q) }],
+      targets: [{ row: 'qt', col: j }]
+    }));
+
+    // product: digits go under the partial number, most significant digit first
+    const ds = String(prod).split('');
+    const pe = [], pt = [];
+    ds.forEach((d, i) => {
+      const col = j + (ds.length - 1 - i);
+      pe.push({ kind: 'pp', row: 'prod' + k, col, value: d });
+      pt.push({ row: 'prod' + k, col });
+    });
+    steps.push(step({
+      title,
+      question: 'What is ' + q + ' × ' + b + '?',
+      expected: String(prod),
+      hint: q === 0 ? '0 times ' + b + ' is 0.' : 'Add ' + b + ' together ' + q + ' times.',
+      success: 'Write the ' + prod + ' under ' + cur + '.',
+      effects: pe,
+      targets: pt
+    }));
+
+    // remainder: a non-last remainder is written into the next bd row, where the next dividend
+    // digit drops in beside it (shown, not typed). The last remainder stays in its own row.
+    const rowName = last ? 'rem' + k : 'bd' + (k + 1);
+    const re = [{ kind: 'pp', row: rowName, col: j, value: String(rem) }];
+    if (!last) re.push({ kind: 'drop', row: rowName, col: j - 1, value: String(da[j - 1]), src: 'top', srcCol: j - 1 });
+    steps.push(step({
+      title,
+      question: 'What is ' + cur + ' ' + MINUS + ' ' + prod + '?',
+      expected: String(rem),
+      hint: 'Start at ' + prod + ' and count up to ' + cur + '.',
+      success: last ? 'Write the ' + rem + '. That is the remainder.' : 'Write the ' + rem + '. Bring down the ' + da[j - 1] + '.',
+      effects: re,
+      targets: [{ row: rowName, col: j }]
+    }));
+  });
+  return steps;
+}
+
 // One entry per operation. The UI reads label, sym and oneDigitCarry from here.
 // oneDigitCarry: false = a 1-digit problem can never need a carry or borrow.
 export const OPS = {
   add: { label: 'Addition', sym: '+', oneDigitCarry: true, pick: pickAdd, steps: buildAddSteps, solution: (p) => String(p.a + p.b) },
   sub: { label: 'Subtraction', sym: MINUS, oneDigitCarry: false, pick: pickSub, steps: buildSubSteps, solution: (p) => String(p.a - p.b) },
   mul: { label: 'Multiplication', sym: '×', oneDigitCarry: true, pick: pickMul, steps: buildMulSteps, solution: (p) => String(p.a * p.b) },
+  div: { label: 'Division', sym: '÷', oneDigitCarry: true, pick: pickDiv, steps: buildDivSteps,
+    solution: (p) => Math.floor(p.a / p.b) + ' R ' + (p.a % p.b) },
 };
 
 export function buildSteps(p) {

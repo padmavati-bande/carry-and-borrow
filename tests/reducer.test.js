@@ -131,6 +131,32 @@ assert.strictEqual(reducer(start, { type: 'SHOW_START' }).screen, 'start');
   assert.strictEqual(s.game.good, 1, 'no mistakes counts as clean');
 }
 
+// division 92 / 4 = 23 R 0: every step types and the quotient and remainder land on the view
+{
+  let s = reducer(initialState, { type: 'START', op: 'div', len: 2, problem: { op: 'div', a: 92, b: 4, len: 2 } });
+  assert.strictEqual(s.cur.steps.length, 6);
+  for (let i = 0; i < 6; i++) {
+    s = type(s, s.cur.steps[s.cur.stepIndex].expected);
+    assert.strictEqual(s.cur.settle, true, 'division step ' + i + ' settles');
+    s = reducer(s, { type: 'ADVANCE' });
+  }
+  assert.strictEqual(s.cur.finished, true);
+  assert.strictEqual(s.cur.view.pp['qt:1'], '2');
+  assert.strictEqual(s.cur.view.pp['qt:0'], '3');
+  assert.strictEqual(s.cur.view.pp['rem1:0'], '0');
+  assert.strictEqual(s.cur.view.pp['bd1:1'], '1', 'remainder 1 typed into bd1');
+  assert.strictEqual(s.cur.view.pp['bd1:0'], '2', 'digit 2 dropped into bd1');
+  assert.strictEqual(s.game.good, 1, 'no mistakes counts as clean');
+}
+
+// division: a wrong first digit shakes the quotient cell
+{
+  const s0 = reducer(initialState, { type: 'START', op: 'div', len: 2, problem: { op: 'div', a: 92, b: 4, len: 2 } });
+  const s = type(s0, '3');
+  assert.strictEqual(s.cur.mistakes, 1);
+  assert.strictEqual(s.cur.wrongPending, true);
+}
+
 console.log('OK - reducer: miss reveal, settle/advance, finish, off-screen keys.');
 
 // 6. multiply: a carry flies from its partial row (pp0) up to the carry row

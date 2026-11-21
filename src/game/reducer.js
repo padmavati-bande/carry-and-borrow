@@ -44,7 +44,7 @@ export function newCur(problem) {
 }
 
 // Effects that do not put a digit in an answer column (they never decide the slide).
-const NO_COLUMN = ['borrow', 'pp', 'use', 'mcarry', 'acarry'];
+const NO_COLUMN = ['borrow', 'pp', 'use', 'mcarry', 'acarry', 'drop'];
 
 // A carry that flies: dst col, dst row, source row and column
 function flyTo(v, to, e) { v.fly = e.col; v.flyTo = to; v.flySrc = e.src; v.flySrcCol = e.srcCol; }
@@ -56,6 +56,8 @@ const EFFECTS = {
   newTop: (v, e) => { v.carry[e.col] = e.value; v.struck[e.col] = true; },
   borrow: (v, e) => { v.mark[e.col] = e.value; },
   pp: (v, e) => { v.pp[e.row + ':' + e.col] = e.value; },
+  // a dividend digit drops down into a division row (animated, see board.js divCells)
+  drop: (v, e) => { v.pp[e.row + ':' + e.col] = e.value; flyTo(v, e.row, e); },
   mcarry: (v, e) => { v.carry[e.col] = e.value; flyTo(v, 'carry', e); },
   acarry: (v, e) => { v.acarry[e.col] = e.value; flyTo(v, 'acarry', e); },
   // strike the carry: its value moves to the crossed-out slot of the same column

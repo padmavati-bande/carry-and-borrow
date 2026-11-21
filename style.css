@@ -93,6 +93,10 @@ legend { font-weight: 700; margin-bottom: 8px; padding: 0; }
 }
 .cell.op { color: #d4d4d4; }
 .cell.rule { border-bottom: 3px solid #d4d4d4; }
+/* long division: divisor left of the dividend, vinculum over the dividend, quotient on top */
+.cell.divisor::after { content: ")"; position: absolute; z-index: 2; top: calc(var(--cell) * -.22); right: calc(var(--cell) * -.34); font-size: calc(var(--cell) * 1.2); font-weight: 300; line-height: 1; color: var(--ink); }
+.cell.dividend { border-top: 6px solid var(--ink); }
+.cell.qt:not(.target) { color: var(--ok); }
 .cell.ans { font-size: calc(var(--cell) * .66); }
 .cell.ans:not(.target) { color: var(--ok); }
 .cell.target {

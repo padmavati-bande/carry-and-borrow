@@ -127,8 +127,68 @@ assert.strictEqual(steps('mul', 7, 8)[0].expected, '56');
 assert.deepStrictEqual(steps('mul', 7, 8)[0].effects.map(function (e) { return e.col; }), [1, 0]);
 assert.strictEqual(steps('mul', 7, 8)[0].effects[0].kind, 'ans');
 
+// Division: long division with remainder. Reads the quotient row and the last remainder row.
+function divSimulate(p) {
+  var steps = Engine.buildSteps(p);
+  var parts = Engine.divPlan(p);
+  var q = {}, r = {};
+  steps.forEach(function (step) {
+    assert.ok(/^\d+$/.test(step.expected), 'div expected must be digits: ' + step.expected);
+    assert.strictEqual(step.targets.length, step.expected.length, 'one target per digit: ' + step.question);
+    step.effects.forEach(function (e) {
+      if (e.kind !== 'pp') return;
+      if (e.row === 'qt') q[e.col] = e.value;
+      if (e.row === 'rem' + (parts.length - 1)) r[e.col] = e.value;
+    });
+  });
+  var join = function (m) {
+    return Object.keys(m).map(Number).sort(function (x, y) { return y - x; })
+      .map(function (c) { return m[c]; }).join('');
+  };
+  return join(q) + ' R ' + join(r);
+}
+
+var divCount = 0;
+[1, 2, 3, 4].forEach(function (len) {
+  for (var i = 0; i < 1500; i++) {
+    var p = Engine.generateProblem('div', len);
+    assert.strictEqual(String(p.a).length, len, 'dividend has ' + len + ' digits');
+    assert.ok(p.b >= 2 && p.b <= 9, 'divisor 2-9: ' + p.b);
+    assert.ok(p.a >= p.b, 'dividend >= divisor');
+    var parts = Engine.divPlan(p);
+    var ds = Engine.buildSteps(p);
+    assert.strictEqual(ds.length, 3 * parts.length, 'three steps per quotient digit');
+    parts.forEach(function (part, k) {
+      assert.ok(part.rem < p.b, 'remainder smaller than divisor: ' + part.rem);
+      assert.ok(part.q >= 0 && part.q <= 9, 'quotient digit 0-9: ' + part.q);
+      assert.strictEqual(Number(ds[3 * k + 2].expected), part.rem, 'remainder step matches the plan');
+    });
+    assert.strictEqual(divSimulate(p), Engine.solution(p), 'div ' + p.a + ' / ' + p.b);
+    divCount++;
+  }
+});
+// Fixed division cases
+assert.strictEqual(divSimulate({ op: 'div', a: 92, b: 4, len: 2 }), '23 R 0');
+assert.strictEqual(steps('div', 92, 4).length, 6);
+// the remainder of a non-last part goes to the next bd row; the next digit drops in beside it
+assert.deepStrictEqual(steps('div', 92, 4)[2].effects.filter(function (e) { return e.kind === 'drop'; }),
+  [{ kind: 'drop', row: 'bd1', col: 0, value: '2', src: 'top', srcCol: 0 }]);
+assert.strictEqual(divSimulate({ op: 'div', a: 192, b: 4, len: 3 }), '48 R 0');
+assert.strictEqual(steps('div', 192, 4).length, 6);
+assert.strictEqual(divSimulate({ op: 'div', a: 812, b: 4, len: 3 }), '203 R 0');
+assert.strictEqual(steps('div', 812, 4).length, 9);
+assert.strictEqual(divSimulate({ op: 'div', a: 105, b: 5, len: 3 }), '21 R 0');
+assert.strictEqual(steps('div', 105, 5).length, 6);
+assert.strictEqual(divSimulate({ op: 'div', a: 1200, b: 4, len: 4 }), '300 R 0');
+assert.strictEqual(steps('div', 1200, 4).length, 9);
+assert.strictEqual(divSimulate({ op: 'div', a: 7, b: 3, len: 1 }), '2 R 1');
+assert.strictEqual(steps('div', 7, 3).length, 3);
+// 92 / 4 step by step: quotient, product, remainder, then again
+assert.deepStrictEqual(steps('div', 92, 4).map(function (s) { return s.expected; }),
+  ['2', '8', '1', '3', '12', '0']);
+
 // No step text may say "undefined" (PLACES ran out at 4-digit multiply before).
-[['add', 1], ['add', 2], ['add', 3], ['add', 4], ['sub', 2], ['sub', 3], ['sub', 4], ['mul', 1], ['mul', 2], ['mul', 3], ['mul', 4]].forEach(function (pair) {
+[['add', 1], ['add', 2], ['add', 3], ['add', 4], ['sub', 2], ['sub', 3], ['sub', 4], ['mul', 1], ['mul', 2], ['mul', 3], ['mul', 4], ['div', 1], ['div', 2], ['div', 3], ['div', 4]].forEach(function (pair) {
   for (var u = 0; u < 300; u++) {
     Engine.buildSteps(Engine.generateProblem(pair[0], pair[1], Math.random, u % 2 === 0)).forEach(function (s) {
       assert.ok(!/undefined/.test(s.question + s.success + s.hint + s.title), 'text says undefined: ' + s.success);
@@ -138,5 +198,11 @@ assert.strictEqual(steps('mul', 7, 8)[0].effects[0].kind, 'ans');
 Engine.buildSteps({ op: 'mul', a: 9999, b: 9999, len: 4 }).forEach(function (s) {
   assert.ok(!/undefined/.test(s.success), 'worst case says undefined: ' + s.success);
 });
+Engine.buildSteps({ op: 'div', a: 9999, b: 9, len: 4 }).forEach(function (s) {
+  assert.ok(!/undefined/.test(s.question + s.success + s.hint + s.title), 'div worst case says undefined: ' + s.success);
+});
+Engine.buildSteps({ op: 'div', a: 1000, b: 2, len: 4 }).forEach(function (s) {
+  assert.ok(!/undefined/.test(s.question + s.success + s.hint + s.title), 'div with zeros says undefined: ' + s.success);
+});
 
-console.log('OK - ' + counts.add + ' addition and ' + counts.sub + ' subtraction problems solved correctly.');
+console.log('OK - ' + counts.add + ' addition, ' + counts.sub + ' subtraction and ' + divCount + ' division problems solved correctly.');

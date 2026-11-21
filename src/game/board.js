@@ -149,7 +149,54 @@ function addSubCells(cur) {
   return { cols, rows, ansRow: rows - 1, cells };
 }
 
-const LAYOUTS = { add: addSubCells, sub: addSubCells, mul: mulCells };
+// Long division layout. Rows, top to bottom: quotient, dividend (divisor in the left column),
+// then for each quotient digit a product row and a remainder row, plus a bring-down row
+// (the partial number) before each product after the first.
+function divCells(cur) {
+  const p = cur.problem, len = p.len, cols = len + 1, v = cur.view;
+  const da = Engine.digitsOf(p.a, len);
+  const parts = Engine.divPlan(p);
+  const rowList = ['qt', 'top'];
+  parts.forEach((_, k) => {
+    if (k > 0) rowList.push('bd' + k);
+    rowList.push('prod' + k);
+    if (k === parts.length - 1) rowList.push('rem' + k);
+  });
+  const rowIdx = (name) => rowList.indexOf(name);
+
+  const cellOf = (row, c, base) => {
+    const tgt = isTarget(cur, row, c);
+    const text = tgt ? bufferFor(cur, row, c) : (v.pp[row + ':' + c] || '');
+    const fly = v.flyTo === row && v.fly === c; // a dropped digit slides down from the dividend
+    return {
+      key: row + '-' + c,
+      cls: base + (text ? ' filled' : '') + (tgt ? ' target' : '') + (fly ? ' fly' : '') + shake(cur, row, c),
+      text,
+      style: fly ? { '--fy': String(rowIdx(v.flySrc) - rowIdx(row)), '--fx': String(c - v.flySrcCol) } : undefined
+    };
+  };
+
+  const cells = [];
+  cells.push(spacer('qt-sp'), ...across(cols, 0, (c) => cellOf('qt', c, 'pp qt')));
+
+  // dividend row: the divisor sits in the left column, the bracket runs down its right edge
+  cells.push(spacer('top-sp'), ...across(cols, 0, (c) => (c === len
+    ? { key: 'top-' + c, cls: 'divisor', text: String(p.b) }
+    : { key: 'top-' + c, cls: 'dividend', text: da[c] })));
+
+  parts.forEach((_, k) => {
+    if (k > 0) cells.push(spacer('bd-sp-' + k), ...across(cols, 0, (c) => cellOf('bd' + k, c, 'pp bd')));
+    cells.push(spacer('prod-sp-' + k), ...across(cols, 0, (c) => (c === len
+      ? { key: 'prod' + k + '-' + c, cls: 'op', text: Engine.MINUS }
+      : cellOf('prod' + k, c, 'pp rule'))));
+    if (k === parts.length - 1) cells.push(spacer('rem-sp-' + k), ...across(cols, 0, (c) => cellOf('rem' + k, c, 'pp')));
+  });
+
+  const rows = rowList.length;
+  return { cols, rows, ansRow: rows - 1, cells };
+}
+
+const LAYOUTS = { add: addSubCells, sub: addSubCells, mul: mulCells, div: divCells };
 
 export function boardCells(cur) {
   return LAYOUTS[cur.problem.op](cur);

@@ -17,7 +17,7 @@ export default function StartScreen({ onStart }) {
   const secsOk = /^\d+$/.test(secs) && n >= 1 && n <= 600;
   return (
     <section id="start" className="card">
-      <h2>Add, subtract and multiply with carrying</h2>
+      <h2>Add, subtract, multiply and divide</h2>
       <div className="howto">
         <div>
           <h3>Addition</h3>
@@ -43,6 +43,14 @@ export default function StartScreen({ onStart }) {
             <li>Now subtract the column. Keep going left.</li>
           </ol>
         </div>
+        <div>
+          <h3>Division</h3>
+          <ol>
+            <li>Find how many times the divisor fits into the first digits.</li>
+            <li>Write that count on top. Multiply it back and subtract.</li>
+            <li>Bring down the next digit and repeat. What is left is the remainder.</li>
+          </ol>
+        </div>
       </div>
 
       <fieldset>
@@ -65,7 +73,7 @@ export default function StartScreen({ onStart }) {
       <fieldset>
         <legend>Rules</legend>
         <label className="choice">
-          <input type="checkbox" checked={carry} disabled={op === 'mul' && len === '1'} onChange={() => { const c = !carry; setCarry(c); if (needsTwo(op, c) && len === '1') setLen('2'); }} /><span>Carry and borrow</span>
+          <input type="checkbox" checked={carry} disabled={op === 'div' || (op === 'mul' && len === '1')} onChange={() => { const c = !carry; setCarry(c); if (needsTwo(op, c) && len === '1') setLen('2'); }} /><span>Carry and borrow</span>
         </label>
       </fieldset>
 

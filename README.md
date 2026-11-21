@@ -1,8 +1,8 @@
 # Carry & Borrow
 
-A small, offline web page for practising column addition (carrying) and column
-subtraction (borrowing). It asks one small question at a time, lights up the box
-to fill, and checks each step as the child goes.
+A small, offline web page for practising column addition (carrying), column
+subtraction (borrowing), multiplication and long division. It asks one small
+question at a time, lights up the box to fill, and checks each step as the child goes.
 
 ## Run it
 
@@ -19,7 +19,8 @@ git config core.hooksPath .githooks  # once per clone: pushing main publishes di
 ## How it works
 
 - 10 problems per round, every one needing at least one carry or borrow.
-- Choose Addition, Subtraction, Multiplication or Add and subtract, and 1, 2, 3 or 4 digit numbers. A "Carry and borrow" switch (on by default) turns off the rule that each problem must carry or borrow. 1-digit subtraction needs it off. Multiplication ignores it for 1 digit: all pairs 1 to 9 are used. For 2+ digits, switch off means no carry while multiplying. Carries in the adding step stay.
+- Choose Addition, Subtraction, Multiplication, Division or Add and subtract, and 1, 2, 3 or 4 digit numbers. A "Carry and borrow" switch (on by default) turns off the rule that each problem must carry or borrow. 1-digit subtraction needs it off. Multiplication ignores it for 1 digit: all pairs 1 to 9 are used. For 2+ digits, switch off means no carry while multiplying. Carries in the adding step stay.
+- Division: long division with a remainder, shown as `Q R r`. The dividend has 1 to 4 digits, the divisor is 2 to 9. The carry switch does not apply.
 - Correct answers fill in the board and move on by themselves.
 - A wrong answer shakes the boxes; the second miss shows a hint and the third
   shows the answer so the child is never stuck.
