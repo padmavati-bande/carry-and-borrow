@@ -1,6 +1,7 @@
-import { useEffect, useReducer } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import Engine from '../../engine.js';
 import { reducer, initialState, TOTAL } from '../game/reducer.js';
+import { uniqueProblem } from '../game/draw.js';
 
 // Random pick for 'mix' happens here, not in the reducer, so the reducer stays pure.
 function makeProblem(op, len, carry) {
@@ -10,6 +11,7 @@ function makeProblem(op, len, carry) {
 
 export function useGame() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const seen = useRef(new Set()); // problems already shown in this game: no repeats
   const { cur } = state;
   const settle = !!(cur && cur.settle && !cur.finished);
   const stepIndex = cur ? cur.stepIndex : -1;
@@ -18,7 +20,7 @@ export function useGame() {
   // show the settled board, then move to the next step
   useEffect(() => {
     if (!settle) return undefined;
-    const t = setTimeout(() => dispatch({ type: 'ADVANCE' }), 1100);
+    const t = setTimeout(() => dispatch({ type: 'ADVANCE' }), 450);
     return () => clearTimeout(t);
   }, [settle, stepIndex]);
 
@@ -53,11 +55,14 @@ export function useGame() {
 
   return {
     state,
-    start: (op, len, timed, limit, carry) => dispatch({ type: 'START', op, len, timed, limit, carry, problem: makeProblem(op, len, carry) }),
+    start: (op, len, timed, limit, carry) => {
+      seen.current = new Set();
+      dispatch({ type: 'START', op, len, timed, limit, carry, problem: uniqueProblem(() => makeProblem(op, len, carry), seen.current) });
+    },
     next: () => {
       const g = state.game;
       if (g.index >= TOTAL) dispatch({ type: 'FINISH' });
-      else dispatch({ type: 'NEXT', problem: makeProblem(g.op, g.len, g.carry) });
+      else dispatch({ type: 'NEXT', problem: uniqueProblem(() => makeProblem(g.op, g.len, g.carry), seen.current) });
     },
     press: (key) => dispatch({ type: 'PRESS', key }),
     backspace: () => dispatch({ type: 'BACKSPACE' }),

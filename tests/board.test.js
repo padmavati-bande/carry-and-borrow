@@ -105,4 +105,43 @@ const cell = (cells, key) => cells.find((c) => c.key === key);
   assert.ok(cell(cells, 'bottom-0').cls.includes('rule'), 'rule sits under bottom number');
 }
 
+// multiplication 59 x 45: carry row, top, bottom, addition carry row, 2 partial rows, answer
+{
+  const cur = newCur({ op: 'mul', a: 59, b: 45, len: 2 });
+  const { cells, cols, rows, ansRow } = boardCells(cur);
+  assert.strictEqual(cols, 4);
+  assert.strictEqual(rows, 7);
+  assert.strictEqual(ansRow, 6);
+  assert.ok(cell(cells, 'carry-1').cls.includes('target'), 'first step: carry box above tens');
+  assert.ok(cell(cells, 'pp-0-0').cls.includes('target'), 'first step: ones of row 1');
+  assert.strictEqual(cell(cells, 'top-1').text, 5);
+  assert.strictEqual(cell(cells, 'bottom-0').text, 5);
+  assert.ok(!cell(cells, 'top-0').cls.includes('dim'), 'focus top digit not dimmed');
+  assert.ok(cell(cells, 'top-1').cls.includes('dim'), 'other top digit dimmed');
+  assert.ok(cell(cells, 'pp-op').cls.includes('op'), 'plus sign sits on the last partial row');
+}
+
+// 7 x 8: one digit, no carry or partial rows, answer row under the rule
+{
+  const { rows, ansRow, cols } = boardCells(newCur({ op: 'mul', a: 7, b: 8, len: 1 }));
+  assert.strictEqual(rows, 3);
+  assert.strictEqual(ansRow, 2);
+  assert.strictEqual(cols, 2);
+}
+
+// 4-digit x 4-digit: 8 digit columns (+ the operator column)
+{
+  const { cols, rows } = boardCells(newCur({ op: 'mul', a: 1234, b: 5678, len: 4 }));
+  assert.strictEqual(cols, 8);
+  assert.strictEqual(rows, 9); // carry, top, bottom, addition carry, 4 partial rows, answer
+}
+
+// placeholder-zero step of 59 x 45 (step 2): every top and bottom digit is dimmed
+{
+  const cur = { ...newCur({ op: 'mul', a: 59, b: 45, len: 2 }), stepIndex: 2 };
+  assert.strictEqual(activeStep(cur).expected, '0');
+  const { cells } = boardCells(cur);
+  ['top-0', 'top-1', 'bottom-0', 'bottom-1'].forEach((k) => assert.ok(cell(cells, k).cls.includes('dim'), k + ' dimmed'));
+}
+
 console.log('OK - board: layout, highlights, typed digits, dim, shake, finished.');

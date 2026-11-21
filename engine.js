@@ -55,7 +55,23 @@ function countBorrows(a, b, len) {
  * off = no problem may have a carry or borrow.
  */
 export function generateProblem(op, len, rng = Math.random, requireCarry = true) {
+  // one-digit x: all pairs 1-9 x 1-9, the carry switch does not apply
+  if (op === 'mul' && len === 1) return { op: 'mul', a: randomNumber(1, rng), b: randomNumber(1, rng), len: 1 };
   for (let tries = 0; tries < 5000; tries++) {
+    if (op === 'mul') {
+      // carry on: any pair that needs a carry (multiply or add phase).
+      // off: no digit product reaches 10, so the multiply rows never carry. The add phase may carry.
+      let a = randomNumber(len, rng), b = randomNumber(len, rng);
+      if (!requireCarry) {
+        // largest digit of a times largest digit of b must stay under 10
+        const m = Math.max(...digitsOf(a, len));
+        b = cappedNumber(len, Math.floor(9 / m), rng);
+      }
+      const steps = buildMulSteps({ op: 'mul', a, b, len });
+      const ok = requireCarry ? regroups(steps) : !mulCarries(steps);
+      if (ok) return { op: 'mul', a, b, len };
+      continue;
+    }
     let a = randomNumber(len, rng), b = randomNumber(len, rng);
     if (op === 'add') {
       const n = countCarries(a, b, len);
@@ -70,6 +86,127 @@ export function generateProblem(op, len, rng = Math.random, requireCarry = true)
     }
   }
   throw new Error('Could not generate a problem');
+}
+
+
+// Multiplication: a number has len digits (same len for both). Row j is the bottom digit j times
+// the top number, shifted j places left. Then the rows are added column by column.
+function cappedNumber(len, cap, rng) {
+  let n = randInt(1, cap, rng);
+  for (let i = 1; i < len; i++) n = n * 10 + randInt(0, cap, rng);
+  return n;
+}
+
+// True when a multiply row carries (a digit product of 10 or more).
+function mulCarries(steps) {
+  return steps.some((s) => s.effects.some((e) => e.kind === 'mcarry'));
+}
+
+// True when a step needs two digits: a product or a sum of 10 or more (zero placeholders excluded).
+function regroups(steps) {
+  return steps.some((s) => s.expected.length > 1 && !/^0+$/.test(s.expected));
+}
+
+function buildMulSteps(p) {
+  const len = p.len, da = digitsOf(p.a, len), db = digitsOf(p.b, len);
+  const single = len === 1; // one digit: the only partial row is the answer row
+  const rowOf = (j) => (single ? 'ans' : 'pp' + j);
+  const put = (j, col, value) => (single ? { kind: 'ans', col, value: String(value) } : { kind: 'pp', row: j, col, value: String(value) });
+  const written = []; // written[j][col] = digit placed in partial row j
+  const steps = [];
+  for (let j = 0; j < len; j++) {
+    written[j] = {};
+    if (j > 0) {
+      // empty places on the right of row j hold zeros
+      const effects = [], targets = [];
+      for (let k = j - 1; k >= 0; k--) {
+        effects.push(put(j, k, 0));
+        targets.push({ row: rowOf(j), col: k });
+        written[j][k] = 0;
+      }
+      steps.push({
+        title: 'Row ' + (j + 1),
+        question: 'Row ' + (j + 1) + ': write ' + (j === 1 ? 'a 0' : j + ' zeros') + ' in the empty places.',
+        expected: '0'.repeat(j),
+        hint: 'Each empty place on the right is a 0.',
+        success: 'Good. Row ' + (j + 1) + ' is shifted left.',
+        effects,
+        targets,
+        focus: { top: -1, bottom: -1 } // no digit is the focus, so all top and bottom digits dim
+      });
+    }
+    let carry = 0;
+    for (let i = 0; i < len; i++) {
+      const prod = da[i] * db[j] + carry, col = i + j, last = i === len - 1;
+      const effects = [], targets = [];
+      let success;
+      if (carry) effects.push({ kind: 'use', row: 'carry', col: i });
+      if (prod >= 10 && !last) {
+        effects.push(put(j, col, prod % 10), { kind: 'mcarry', col: i + 1, value: String(Math.floor(prod / 10)) });
+        targets.push({ row: 'carry', col: i + 1 }, { row: rowOf(j), col });
+        written[j][col] = prod % 10;
+        success = 'Write the ' + (prod % 10) + ' and carry the ' + Math.floor(prod / 10) + ' above the ' + PLACES[i + 1] + '.';
+      } else if (prod >= 10) {
+        effects.push(put(j, col + 1, Math.floor(prod / 10)), put(j, col, prod % 10));
+        targets.push({ row: rowOf(j), col: col + 1 }, { row: rowOf(j), col });
+        written[j][col + 1] = Math.floor(prod / 10);
+        written[j][col] = prod % 10;
+        success = prod + ' is ten or more, so write ' + prod + ' in full.';
+      } else {
+        effects.push(put(j, col, prod));
+        targets.push({ row: rowOf(j), col });
+        written[j][col] = prod;
+        success = 'Write the ' + prod + '.';
+      }
+      steps.push({
+        title: 'Row ' + (j + 1) + ', ' + PLACES[i],
+        question: 'What is ' + db[j] + ' × ' + da[i] + (carry ? ' + ' + carry + '? (the ' + carry + ' is the one you carried)' : '?'),
+        expected: String(prod),
+        hint: 'Use your times table: ' + db[j] + ' × ' + da[i] + '.',
+        success,
+        effects,
+        targets,
+        focus: { top: i, bottom: j } // board dims every other top and bottom digit
+      });
+      carry = Math.floor(prod / 10);
+    }
+  }
+  if (!single) {
+    const L = String(p.a * p.b).length; // digits in the answer
+    let addCarry = 0;
+    for (let c = 0; c < L; c++) {
+      const parts = [];
+      for (let j = 0; j < len; j++) if (c in written[j]) parts.push(written[j][c]);
+      if (addCarry) parts.push(addCarry);
+      const sum = parts.reduce((x, y) => x + y, 0);
+      let question = 'What is ' + parts.join(' + ') + '?';
+      if (addCarry) question = 'What is ' + parts.join(' + ') + '? (the ' + addCarry + ' is the one you carried)';
+      else if (parts.length === 1) question += ' Bring it down.';
+      const effects = [], targets = [];
+      if (addCarry) effects.push({ kind: 'use', row: 'acarry', col: c });
+      let success;
+      if (sum < 10) {
+        effects.push({ kind: 'ans', col: c, value: String(sum) });
+        targets.push({ row: 'ans', col: c });
+        success = 'Write the ' + sum + '.';
+      } else {
+        effects.push({ kind: 'ans', col: c, value: String(sum % 10) }, { kind: 'acarry', col: c + 1, value: String(Math.floor(sum / 10)) });
+        targets.push({ row: 'acarry', col: c + 1 }, { row: 'ans', col: c });
+        success = 'Write the ' + (sum % 10) + ' and carry the ' + Math.floor(sum / 10) + ' to the ' + PLACES[c + 1] + '.';
+      }
+      steps.push({
+        title: 'Adding ' + PLACES[c],
+        question,
+        expected: String(sum),
+        hint: 'Add the digits in this column. Add the carry too.',
+        success,
+        effects,
+        targets
+      });
+      addCarry = Math.floor(sum / 10);
+    }
+  }
+  return steps;
 }
 
 function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -162,9 +299,15 @@ function buildSubSteps(p) {
   return steps;
 }
 
-export function buildSteps(p) { return p.op === 'add' ? buildAddSteps(p) : buildSubSteps(p); }
+export function buildSteps(p) {
+  if (p.op === 'mul') return buildMulSteps(p);
+  return p.op === 'add' ? buildAddSteps(p) : buildSubSteps(p);
+}
 
-export function solution(p) { return String(p.op === 'add' ? p.a + p.b : p.a - p.b); }
+export function solution(p) {
+  if (p.op === 'mul') return String(p.a * p.b);
+  return String(p.op === 'add' ? p.a + p.b : p.a - p.b);
+}
 
 const Engine = { PLACES, MINUS, digitsOf, generateProblem, buildSteps, solution };
 export default Engine;

@@ -91,4 +91,50 @@ assert.strictEqual(simulate({ op: 'sub', a: 305, b: 168, len: 3 }), '137'); // b
 assert.strictEqual(steps('add', 58, 67)[0].expected, '15');  // 8 + 7
 assert.strictEqual(steps('add', 58, 67)[1].expected, '12');  // 5 + 6 + 1
 
+var addCarryOff = 0; // carry-off problems that still carry in the add phase
+// Multiplication: 1-4 digits, carry on and off. Every step needs one target per typed digit.
+[1, 2, 3, 4].forEach(function (len) {
+  [true, false].forEach(function (carry) {
+    for (var q = 0; q < 1500; q++) {
+      var mp = Engine.generateProblem('mul', len, Math.random, carry);
+      assert.strictEqual(String(mp.a).length, len);
+      assert.strictEqual(String(mp.b).length, len);
+      var ms = Engine.buildSteps(mp);
+      ms.forEach(function (s) {
+        assert.strictEqual(s.targets.length, s.expected.length, 'one target per digit: ' + s.question);
+      });
+      assert.strictEqual(simulate(mp), Engine.solution(mp), 'mul ' + mp.a + ' x ' + mp.b);
+      var needs = ms.some(function (s) { return s.expected.length > 1 && !/^0+$/.test(s.expected); });
+      if (len > 1 && carry) assert.ok(needs, 'carry-on needs a carry: ' + mp.a + ' x ' + mp.b);
+      if (len > 1 && !carry) assert.ok(!ms.some(function (s) { return s.effects.some(function (e) { return e.kind === 'mcarry'; }); }), 'carry-off: no multiply carry: ' + mp.a + ' x ' + mp.b);
+      if (len > 1 && !carry && needs) addCarryOff++;
+    }
+  });
+});
+assert.ok(addCarryOff > 0, 'carry-off allows add-phase carries');
+// one-digit x: the carry switch does not change the problems (all pairs 1-9 x 1-9, both modes)
+{
+  var seenOn = {}, seenOff = {}, small = 0;
+  for (var z = 0; z < 4000; z++) {
+    var on = Engine.generateProblem('mul', 1, Math.random, true);
+    var off = Engine.generateProblem('mul', 1, Math.random, false);
+    assert.ok(on.a >= 1 && on.a <= 9 && on.b >= 1 && on.b <= 9);
+    assert.ok(off.a >= 1 && off.a <= 9 && off.b >= 1 && off.b <= 9);
+    seenOn[on.a + 'x' + on.b] = true; seenOff[off.a + 'x' + off.b] = true;
+    if (off.a * off.b < 10) small++;
+  }
+  assert.strictEqual(Object.keys(seenOn).length, 81, 'on mode reaches all 81 pairs');
+  assert.strictEqual(Object.keys(seenOff).length, 81, 'off mode reaches all 81 pairs');
+  assert.ok(small > 0, 'products under 10 appear too');
+}
+// 59 x 45 (the design image): 9 steps, partial rows 295 and 2360, answer 2655
+assert.deepStrictEqual(steps('mul', 59, 45).map(function (s) { return s.expected; }),
+  ['45', '29', '0', '36', '23', '5', '15', '6', '2']);
+assert.strictEqual(simulate({ op: 'mul', a: 59, b: 45, len: 2 }), '2655');
+// one digit: one step, the answer row takes both digits of a two-digit product
+assert.strictEqual(steps('mul', 3, 3).length, 1);
+assert.strictEqual(steps('mul', 7, 8)[0].expected, '56');
+assert.deepStrictEqual(steps('mul', 7, 8)[0].effects.map(function (e) { return e.col; }), [1, 0]);
+assert.strictEqual(steps('mul', 7, 8)[0].effects[0].kind, 'ans');
+
 console.log('OK - ' + counts.add + ' addition and ' + counts.sub + ' subtraction problems solved correctly.');

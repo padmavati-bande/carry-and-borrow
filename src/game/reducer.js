@@ -21,19 +21,29 @@ export function newCur(problem) {
     settle: false,      // settled board shown until ADVANCE
     wrongPending: false, // shake shown until WRONG_CLEAR
     feedback: { text: '', kind: '' },
-    view: { ans: {}, carry: {}, struck: {}, mark: {}, just: null, fly: null, slide: false }
+    view: { ans: {}, carry: {}, struck: {}, mark: {}, pp: {}, acarry: {}, cstruck: {}, astruck: {}, just: null, fly: null, slide: false }
   };
 }
 
 function applyEffects(view, step) {
-  const v = { ...view, ans: { ...view.ans }, carry: { ...view.carry }, struck: { ...view.struck }, mark: { ...view.mark } };
+  const v = { ...view, ans: { ...view.ans }, carry: { ...view.carry }, struck: { ...view.struck }, mark: { ...view.mark },
+    pp: { ...view.pp }, acarry: { ...view.acarry }, cstruck: { ...view.cstruck }, astruck: { ...view.astruck } };
   const cols = [];
   step.effects.forEach((e) => {
-    if (e.kind !== 'borrow') cols.push(e.col);
+    if (!['borrow', 'pp', 'use', 'mcarry', 'acarry'].includes(e.kind)) cols.push(e.col);
     if (e.kind === 'ans') v.ans[e.col] = e.value;
     else if (e.kind === 'carry') { v.carry[e.col] = e.value; v.fly = e.col; }
     else if (e.kind === 'newTop') { v.carry[e.col] = e.value; v.struck[e.col] = true; }
     else if (e.kind === 'borrow') v.mark[e.col] = e.value;
+    else if (e.kind === 'pp') v.pp[e.row + ':' + e.col] = e.value;
+    else if (e.kind === 'mcarry') v.carry[e.col] = e.value;
+    else if (e.kind === 'acarry') v.acarry[e.col] = e.value;
+    else if (e.kind === 'use') {
+      // strike the carry: its value moves to the crossed-out slot of the same column
+      const live = e.row === 'acarry' ? v.acarry : v.carry;
+      const old = e.row === 'acarry' ? v.astruck : v.cstruck;
+      if (live[e.col] !== undefined) { old[e.col] = live[e.col]; delete live[e.col]; }
+    }
   });
   v.just = cols;
   v.slide = step.targets.some((t) => t.col < 0);

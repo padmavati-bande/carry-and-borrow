@@ -19,7 +19,7 @@ git config core.hooksPath .githooks  # once per clone: pushing main publishes di
 ## How it works
 
 - 10 problems per round, every one needing at least one carry or borrow.
-- Choose Addition, Subtraction or Both, and 1, 2, 3 or 4 digit numbers. A "Carry and borrow" switch (on by default) turns off the rule that each problem must carry or borrow. 1-digit subtraction needs it off.
+- Choose Addition, Subtraction, Multiplication or Add and subtract, and 1, 2, 3 or 4 digit numbers. A "Carry and borrow" switch (on by default) turns off the rule that each problem must carry or borrow. 1-digit subtraction needs it off. Multiplication ignores it for 1 digit: all pairs 1 to 9 are used. For 2+ digits, switch off means no carry while multiplying. Carries in the adding step stay.
 - Correct answers fill in the board and move on by themselves.
 - A wrong answer shakes the boxes; the second miss shows a hint and the third
   shows the answer so the child is never stuck.

@@ -116,4 +116,19 @@ assert.strictEqual(reducer(start, { type: 'SHOW_START' }).screen, 'start');
   assert.strictEqual(t.cur.timedOut, true, 'custom limit of 5 ends on 5th tick');
 }
 
+// multiplication 59 x 45: type each step's digits and advance; the answer fills in
+{
+  let s = reducer(initialState, { type: 'START', op: 'mul', len: 2, problem: { op: 'mul', a: 59, b: 45, len: 2 } });
+  const n = s.cur.steps.length;
+  for (let i = 0; i < n; i++) {
+    s = type(s, s.cur.steps[s.cur.stepIndex].expected);
+    assert.strictEqual(s.cur.settle, true, 'step ' + i + ' settles');
+    s = reducer(s, { type: 'ADVANCE' });
+  }
+  assert.strictEqual(s.cur.finished, true);
+  const ans = Object.keys(s.cur.view.ans).map(Number).sort((x, y) => y - x).map((c) => s.cur.view.ans[c]).join('');
+  assert.strictEqual(ans, '2655');
+  assert.strictEqual(s.game.good, 1, 'no mistakes counts as clean');
+}
+
 console.log('OK - reducer: miss reveal, settle/advance, finish, off-screen keys.');

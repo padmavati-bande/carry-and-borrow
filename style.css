@@ -82,6 +82,8 @@ legend { font-weight: 700; margin-bottom: 8px; padding: 0; }
 .cell.carry { font-size: calc(var(--cell) * .38); color: var(--blue); padding: 12%; background-clip: content-box; }
 .cell.carry.filled, .cell.carry.target { background-color: var(--blue-soft); }
 .cell.carry.target { border-bottom-color: var(--grid); }
+/* crossed-out carry from an earlier row or column (multiplication) */
+.cell .old { position: absolute; right: 12%; top: 6%; font-size: .55em; color: #94a3b8; text-decoration: line-through; }
 .cell.dim { color: #d4d4d4; }
 /* borrow row: blue 1 lent to the column on its left */
 .cell.mark { font-size: calc(var(--cell) * .45); color: var(--blue); font-weight: 800; }
@@ -113,9 +115,9 @@ legend { font-weight: 700; margin-bottom: 8px; padding: 0; }
 .cell.shake { animation: shake .4s; background: var(--bad-soft); border-bottom-color: var(--bad); }
 @keyframes shake { 20%,60% { transform: translateX(-8px); } 40%,80% { transform: translateX(8px); } }
 /* carry 1 flies up from the answer row to the carry cell */
-.cell.fly { z-index: 3; animation: fly .7s ease-out; }
+.cell.fly { z-index: 3; animation: fly .4s ease-out; }
 @keyframes fly { from { transform: translate(calc(var(--fx, 0) * var(--cell)), calc(var(--cell) * 3)); } to { transform: none; } }
-.cell.slide { animation: slide .5s ease-out; }
+.cell.slide { animation: slide .3s ease-out; }
 @keyframes slide { from { transform: translateX(var(--cell)); } to { transform: none; } }
 
 .feedback { min-height: 1.6em; margin: 4px 0 8px; font-weight: 700; }

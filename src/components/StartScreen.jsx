@@ -1,6 +1,9 @@
 import { useState } from 'react';
 
-const OPS = [['add', 'Addition'], ['sub', 'Subtraction'], ['mix', 'Both']];
+const OPS = [['add', 'Addition'], ['sub', 'Subtraction'], ['mul', 'Multiplication'], ['mix', 'Add and subtract']];
+
+// subtraction (and 'both') with carry on needs 2+ digits: a 1-digit one never borrows
+const needsTwo = (op, carry) => carry && (op === 'sub' || op === 'mix');
 const LENS = [['1', '1 digit'], ['2', '2 digits'], ['3', '3 digits'], ['4', '4 digits']];
 
 export default function StartScreen({ onStart }) {
@@ -13,7 +16,7 @@ export default function StartScreen({ onStart }) {
   const secsOk = /^\d+$/.test(secs) && n >= 1 && n <= 600;
   return (
     <section id="start" className="card">
-      <h2>Add and subtract with carrying</h2>
+      <h2>Add, subtract and multiply with carrying</h2>
       <div className="howto">
         <div>
           <h3>Addition</h3>
@@ -21,6 +24,14 @@ export default function StartScreen({ onStart }) {
             <li>Add the ones column.</li>
             <li>If the total is 10 or more, write the ones digit and <b>carry</b> the 1 to the next column.</li>
             <li>Add the next column, plus the carried 1. Keep going left.</li>
+          </ol>
+        </div>
+        <div>
+          <h3>Multiplication</h3>
+          <ol>
+            <li>Multiply each top digit by the bottom digit. Start at the right.</li>
+            <li>Write the ones digit. <b>Carry</b> the tens digit to the next column.</li>
+            <li>Add the partial rows, column by column.</li>
           </ol>
         </div>
         <div>
@@ -37,7 +48,7 @@ export default function StartScreen({ onStart }) {
         <legend>What do you want to practise?</legend>
         {OPS.map(([v, label]) => (
           <label className="choice" key={v}>
-            <input type="radio" name="op" value={v} checked={op === v} onChange={() => { setOp(v); if (v !== 'add' && carry && len === '1') setLen('2'); }} /><span>{label}</span>
+            <input type="radio" name="op" value={v} checked={op === v} onChange={() => { setOp(v); if (needsTwo(v, carry) && len === '1') setLen('2'); }} /><span>{label}</span>
           </label>
         ))}
       </fieldset>
@@ -45,7 +56,7 @@ export default function StartScreen({ onStart }) {
         <legend>How big are the numbers?</legend>
         {LENS.map(([v, label]) => (
           <label className="choice" key={v}>
-            <input type="radio" name="len" value={v} checked={len === v} disabled={v === '1' && carry && op !== 'add'} onChange={() => setLen(v)} /><span>{label}</span>
+            <input type="radio" name="len" value={v} checked={len === v} disabled={v === '1' && needsTwo(op, carry)} onChange={() => setLen(v)} /><span>{label}</span>
           </label>
         ))}
       </fieldset>
@@ -53,7 +64,7 @@ export default function StartScreen({ onStart }) {
       <fieldset>
         <legend>Rules</legend>
         <label className="choice">
-          <input type="checkbox" checked={carry} onChange={() => { const c = !carry; setCarry(c); if (c && op !== 'add' && len === '1') setLen('2'); }} /><span>Carry and borrow</span>
+          <input type="checkbox" checked={carry} disabled={op === 'mul' && len === '1'} onChange={() => { const c = !carry; setCarry(c); if (needsTwo(op, c) && len === '1') setLen('2'); }} /><span>Carry and borrow</span>
         </label>
       </fieldset>
 
