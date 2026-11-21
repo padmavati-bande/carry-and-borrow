@@ -43,6 +43,38 @@ var counts = { add: 0, sub: 0 }, zeros = 0;
     }
   });
 });
+// Carry/borrow switch off: 1-digit subtraction works; on: it is refused.
+assert.throws(function () { Engine.generateProblem('sub', 1); });
+for (var j = 0; j < 500; j++) {
+  var q1 = Engine.generateProblem('sub', 1, Math.random, false);
+  assert.ok(q1.a > q1.b && q1.a < 10 && q1.b < 10);
+  assert.strictEqual(simulate(q1), Engine.solution(q1));
+  var q2 = Engine.generateProblem('add', 1, Math.random, false);
+  assert.strictEqual(simulate(q2), Engine.solution(q2));
+  var q3 = Engine.generateProblem('sub', 3, Math.random, false);
+  assert.strictEqual(simulate(q3), Engine.solution(q3));
+}
+// 1-digit addition with carry on: always needs a carry (5 + 7 style).
+for (var k = 0; k < 500; k++) {
+  var q4 = Engine.generateProblem('add', 1);
+  assert.ok(q4.a + q4.b >= 10);
+  assert.strictEqual(simulate(q4), Engine.solution(q4));
+}
+// Carry/borrow switch off: no problem may carry or borrow (add and sub, 2 and 3 digits).
+function regroups(p) {
+  return Engine.buildSteps(p).some(function (s) {
+    return s.effects.some(function (e) { return e.kind === 'carry' || e.kind === 'newTop'; }) ||
+      (p.op === 'add' && s.effects.length === 2);
+  });
+}
+for (var m = 0; m < 1000; m++) {
+  ['add', 'sub'].forEach(function (op) {
+    [2, 3].forEach(function (len) {
+      var p = Engine.generateProblem(op, len, Math.random, false);
+      assert.ok(!regroups(p), 'no-carry problem regroups: ' + op + ' ' + p.a + ' ' + p.b);
+    });
+  });
+}
 assert.ok(zeros > 0, 'generator produces zero digits');
 
 // A few fixed examples

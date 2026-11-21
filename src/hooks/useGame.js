@@ -3,9 +3,9 @@ import Engine from '../../engine.js';
 import { reducer, initialState, TOTAL } from '../game/reducer.js';
 
 // Random pick for 'mix' happens here, not in the reducer, so the reducer stays pure.
-function makeProblem(op, len) {
+function makeProblem(op, len, carry) {
   const kind = op === 'mix' ? (Math.random() < 0.5 ? 'add' : 'sub') : op;
-  return Engine.generateProblem(kind, len);
+  return Engine.generateProblem(kind, len, Math.random, carry);
 }
 
 export function useGame() {
@@ -53,11 +53,11 @@ export function useGame() {
 
   return {
     state,
-    start: (op, len, timed, limit) => dispatch({ type: 'START', op, len, timed, limit, problem: makeProblem(op, len) }),
+    start: (op, len, timed, limit, carry) => dispatch({ type: 'START', op, len, timed, limit, carry, problem: makeProblem(op, len, carry) }),
     next: () => {
       const g = state.game;
       if (g.index >= TOTAL) dispatch({ type: 'FINISH' });
-      else dispatch({ type: 'NEXT', problem: makeProblem(g.op, g.len) });
+      else dispatch({ type: 'NEXT', problem: makeProblem(g.op, g.len, g.carry) });
     },
     press: (key) => dispatch({ type: 'PRESS', key }),
     backspace: () => dispatch({ type: 'BACKSPACE' }),

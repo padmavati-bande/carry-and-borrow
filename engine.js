@@ -50,18 +50,21 @@ function countBorrows(a, b, len) {
 }
 
 /*
- * op: 'add' | 'sub'. len: digits in each number (2-4).
- * Every problem needs at least one carry (add) or borrow (sub).
+ * op: 'add' | 'sub'. len: digits in each number (1-4).
+ * requireCarry (default true): on = every problem needs at least one carry (add) or borrow (sub).
+ * off = no problem may have a carry or borrow.
  */
-export function generateProblem(op, len, rng = Math.random) {
+export function generateProblem(op, len, rng = Math.random, requireCarry = true) {
   for (let tries = 0; tries < 5000; tries++) {
     let a = randomNumber(len, rng), b = randomNumber(len, rng);
     if (op === 'add') {
-      if (countCarries(a, b, len) >= 1) return { op: 'add', a, b, len };
+      const n = countCarries(a, b, len);
+      if (requireCarry ? n >= 1 : n === 0) return { op: 'add', a, b, len };
     } else {
       if (a < b) [a, b] = [b, a];
       // Keep the answer the same length as the inputs (no leading zero).
-      if (a - b >= Math.pow(10, len - 1) && countBorrows(a, b, len) >= 1) {
+      const n = countBorrows(a, b, len);
+      if (a - b >= Math.pow(10, len - 1) && (requireCarry ? n >= 1 : n === 0)) {
         return { op: 'sub', a, b, len };
       }
     }
