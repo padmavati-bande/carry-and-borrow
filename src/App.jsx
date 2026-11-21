@@ -1,5 +1,6 @@
 import { useGame } from './hooks/useGame.js';
-import { TOTAL } from './game/reducer.js';
+import { TOTAL } from './game/config.js';
+import { settingsOf } from './game/reducer.js';
 import StartScreen from './components/StartScreen.jsx';
 import PlayScreen from './components/PlayScreen.jsx';
 import Timer from './components/Timer.jsx';
@@ -29,7 +30,7 @@ export default function App() {
           <PlayScreen game={game} cur={cur} onPress={press} onBackspace={backspace} onNext={next} />
         )}
         {screen === 'done' && (
-          <DoneScreen game={game} onAgain={() => start(game.op, game.len, game.timed, game.limit, game.carry)} onSettings={showStart} />
+          <DoneScreen game={game} onAgain={() => start(settingsOf(game))} onSettings={showStart} />
         )}
       </main>
     </>

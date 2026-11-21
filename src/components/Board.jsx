@@ -1,8 +1,9 @@
+import { useMemo } from 'react';
 import { boardCells } from '../game/board.js';
 import Cell from './Cell.jsx';
 
 export default function Board({ cur }) {
-  const { cols, rows, ansRow, cells } = boardCells(cur);
+  const { cols, rows, ansRow, cells } = useMemo(() => boardCells(cur), [cur]);
   const style = {
     '--cols': cols,
     '--ans-row': ansRow,

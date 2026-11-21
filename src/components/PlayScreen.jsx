@@ -1,7 +1,7 @@
-import Engine from '../../engine.js';
+import * as Engine from '../../engine.js';
 import Board from './Board.jsx';
 import Keypad from './Keypad.jsx';
-import { TOTAL } from '../game/reducer.js';
+import { TOTAL } from '../game/config.js';
 import { sym } from '../utils.js';
 
 // Title, question and note. Shows the equation after a finished problem.

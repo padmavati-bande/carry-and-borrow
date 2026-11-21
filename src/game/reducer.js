@@ -1,9 +1,27 @@
-import Engine from '../../engine.js';
+import * as Engine from '../../engine.js';
+import { hasExtraCell } from './view.js';
 
 // Pure state logic. No DOM, no timers. Timers live in hooks/useGame.js.
-export const TOTAL = 10;
 
 export const initialState = { screen: 'start', game: null, cur: null };
+
+// Every digit map on the board view. Each one is keyed by column.
+const VIEW_MAPS = ['ans', 'carry', 'struck', 'mark', 'pp', 'acarry', 'cstruck', 'astruck'];
+
+function emptyView() {
+  const view = { just: null, fly: null, slide: false };
+  VIEW_MAPS.forEach((k) => { view[k] = {}; });
+  return view;
+}
+
+// The settings a game keeps. Start screen values go in, game settings come out.
+export function settingsFrom(s) {
+  return { op: s.op, len: s.len, timed: !!s.timed, limit: s.limit, carry: s.carry !== false };
+}
+
+export function settingsOf(game) {
+  return { op: game.op, len: game.len, timed: game.timed, limit: game.limit, carry: game.carry };
+}
 
 export function newCur(problem) {
   return {
@@ -21,34 +39,43 @@ export function newCur(problem) {
     settle: false,      // settled board shown until ADVANCE
     wrongPending: false, // shake shown until WRONG_CLEAR
     feedback: { text: '', kind: '' },
-    view: { ans: {}, carry: {}, struck: {}, mark: {}, pp: {}, acarry: {}, cstruck: {}, astruck: {}, just: null, fly: null, slide: false }
+    view: emptyView()
   };
 }
 
+// Effects that do not put a digit in an answer column (they never decide the slide).
+const NO_COLUMN = ['borrow', 'pp', 'use', 'mcarry', 'acarry'];
+
+// A carry that flies: dst col, dst row, source row and column
+function flyTo(v, to, e) { v.fly = e.col; v.flyTo = to; v.flySrc = e.src; v.flySrcCol = e.srcCol; }
+
+// What each effect kind writes on the view. A new kind needs one line here.
+const EFFECTS = {
+  ans: (v, e) => { v.ans[e.col] = e.value; },
+  carry: (v, e) => { v.carry[e.col] = e.value; v.fly = e.col; },
+  newTop: (v, e) => { v.carry[e.col] = e.value; v.struck[e.col] = true; },
+  borrow: (v, e) => { v.mark[e.col] = e.value; },
+  pp: (v, e) => { v.pp[e.row + ':' + e.col] = e.value; },
+  mcarry: (v, e) => { v.carry[e.col] = e.value; flyTo(v, 'carry', e); },
+  acarry: (v, e) => { v.acarry[e.col] = e.value; flyTo(v, 'acarry', e); },
+  // strike the carry: its value moves to the crossed-out slot of the same column
+  use: (v, e) => {
+    const live = e.row === 'acarry' ? v.acarry : v.carry;
+    const old = e.row === 'acarry' ? v.astruck : v.cstruck;
+    if (live[e.col] !== undefined) { old[e.col] = live[e.col]; delete live[e.col]; }
+  },
+};
+
 function applyEffects(view, step) {
-  const v = { ...view, ans: { ...view.ans }, carry: { ...view.carry }, struck: { ...view.struck }, mark: { ...view.mark },
-    pp: { ...view.pp }, acarry: { ...view.acarry }, cstruck: { ...view.cstruck }, astruck: { ...view.astruck } };
+  const v = { ...view };
+  VIEW_MAPS.forEach((k) => { v[k] = { ...view[k] }; });
   const cols = [];
-  // a carry that flies: dst col, dst row, source row and column
-  const flyTo = (to, e) => { v.fly = e.col; v.flyTo = to; v.flySrc = e.src; v.flySrcCol = e.srcCol; };
   step.effects.forEach((e) => {
-    if (!['borrow', 'pp', 'use', 'mcarry', 'acarry'].includes(e.kind)) cols.push(e.col);
-    if (e.kind === 'ans') v.ans[e.col] = e.value;
-    else if (e.kind === 'carry') { v.carry[e.col] = e.value; v.fly = e.col; }
-    else if (e.kind === 'newTop') { v.carry[e.col] = e.value; v.struck[e.col] = true; }
-    else if (e.kind === 'borrow') v.mark[e.col] = e.value;
-    else if (e.kind === 'pp') v.pp[e.row + ':' + e.col] = e.value;
-    else if (e.kind === 'mcarry') { v.carry[e.col] = e.value; flyTo('carry', e); }
-    else if (e.kind === 'acarry') { v.acarry[e.col] = e.value; flyTo('acarry', e); }
-    else if (e.kind === 'use') {
-      // strike the carry: its value moves to the crossed-out slot of the same column
-      const live = e.row === 'acarry' ? v.acarry : v.carry;
-      const old = e.row === 'acarry' ? v.astruck : v.cstruck;
-      if (live[e.col] !== undefined) { old[e.col] = live[e.col]; delete live[e.col]; }
-    }
+    if (!NO_COLUMN.includes(e.kind)) cols.push(e.col);
+    if (EFFECTS[e.kind]) EFFECTS[e.kind](v, e);
   });
   v.just = cols;
-  v.slide = step.targets.some((t) => t.col < 0);
+  v.slide = hasExtraCell(step);
   return v;
 }
 
@@ -92,7 +119,7 @@ export function reducer(state, action) {
     case 'START':
       return {
         screen: 'play',
-        game: { op: action.op, len: action.len, index: 1, good: 0, bad: 0, timed: !!action.timed, limit: action.limit, carry: action.carry !== false },
+        game: { ...settingsFrom(action), index: 1, good: 0, bad: 0 },
         cur: newCur(action.problem)
       };
 

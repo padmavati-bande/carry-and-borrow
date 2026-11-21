@@ -1,11 +1,12 @@
 import { useEffect, useReducer, useRef } from 'react';
-import Engine from '../../engine.js';
-import { reducer, initialState, TOTAL } from '../game/reducer.js';
+import * as Engine from '../../engine.js';
+import { reducer, initialState } from '../game/reducer.js';
+import { TOTAL, MIX } from '../game/config.js';
 import { uniqueProblem } from '../game/draw.js';
 
 // Random pick for 'mix' happens here, not in the reducer, so the reducer stays pure.
 function makeProblem(op, len, carry) {
-  const kind = op === 'mix' ? (Math.random() < 0.5 ? 'add' : 'sub') : op;
+  const kind = op === 'mix' ? MIX[Math.floor(Math.random() * MIX.length)] : op;
   return Engine.generateProblem(kind, len, Math.random, carry);
 }
 
@@ -55,9 +56,9 @@ export function useGame() {
 
   return {
     state,
-    start: (op, len, timed, limit, carry) => {
+    start: (settings) => {
       seen.current = new Set();
-      dispatch({ type: 'START', op, len, timed, limit, carry, problem: uniqueProblem(() => makeProblem(op, len, carry), seen.current) });
+      dispatch({ type: 'START', ...settings, problem: uniqueProblem(() => makeProblem(settings.op, settings.len, settings.carry), seen.current) });
     },
     next: () => {
       const g = state.game;

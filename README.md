@@ -31,9 +31,10 @@ git config core.hooksPath .githooks  # once per clone: pushing main publishes di
 
 | File | Purpose |
 | --- | --- |
-| `engine.js` | Problem generator and step builder (no DOM, ES module) |
+| `engine.js` | Operation registry `OPS`, problem generator and step builder (no DOM, named exports) |
+| `src/game/config.js` | Game settings: problems per round, digit choices, ops for `mix` |
 | `src/game/reducer.js` | Game state logic: input, misses, settle, finish (no DOM) |
-| `src/game/board.js` | Board layout as data (rows, cells, classes) |
+| `src/game/board.js` | Board layout as data (rows, cells, classes), one layout per operation |
 | `src/game/view.js` | Helpers: active step, typed digits, target cells |
 | `src/hooks/useGame.js` | React hook: reducer plus timers and keyboard |
 | `src/components/` | `StartScreen`, `PlayScreen`, `DoneScreen`, `Board`, `Cell`, `Keypad` |
@@ -49,8 +50,11 @@ git config core.hooksPath .githooks  # once per clone: pushing main publishes di
 npm test
 ```
 
-Runs `tests/engine.test.js` (thousands of generated problems solved step by step)
-and `tests/reducer.test.js` (miss reveal, step settle, finish).
+Runs `tests/engine.test.js` (thousands of generated problems solved step by step),
+`tests/reducer.test.js` (miss reveal, step settle, finish), `tests/board.test.js`
+(board layout and highlights) and `tests/pwa.test.js` (install icons).
+
+For developers and AI agents: see `CLAUDE.md` for the architecture and how to add an operation.
 
 ## Ideas for later
 

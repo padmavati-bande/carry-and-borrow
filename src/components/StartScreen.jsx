@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { OPS } from '../../engine.js';
+import { LENS } from '../game/config.js';
 
-const OPS = [['add', 'Addition'], ['sub', 'Subtraction'], ['mul', 'Multiplication'], ['mix', 'Add and subtract']];
+const CHOICES = [...Object.entries(OPS).map(([v, o]) => [v, o.label]), ['mix', 'Add and subtract']];
 
-// subtraction (and 'both') with carry on needs 2+ digits: a 1-digit one never borrows
-const needsTwo = (op, carry) => carry && (op === 'sub' || op === 'mix');
-const LENS = [['1', '1 digit'], ['2', '2 digits'], ['3', '3 digits'], ['4', '4 digits']];
+// carry on and an operation whose 1-digit problems never carry (subtraction, or mix): 2+ digits
+const needsTwo = (op, carry) => carry && (op === 'mix' || OPS[op].oneDigitCarry === false);
 
 export default function StartScreen({ onStart }) {
   const [op, setOp] = useState('add');
@@ -46,7 +47,7 @@ export default function StartScreen({ onStart }) {
 
       <fieldset>
         <legend>What do you want to practise?</legend>
-        {OPS.map(([v, label]) => (
+        {CHOICES.map(([v, label]) => (
           <label className="choice" key={v}>
             <input type="radio" name="op" value={v} checked={op === v} onChange={() => { setOp(v); if (needsTwo(v, carry) && len === '1') setLen('2'); }} /><span>{label}</span>
           </label>
@@ -82,7 +83,7 @@ export default function StartScreen({ onStart }) {
       </fieldset>
 
       <p className="muted">10 problems. The page asks one small question at a time and lights up the box to fill.</p>
-      <button type="button" id="start-btn" className="btn primary" disabled={timed && !secsOk} onClick={() => onStart(op, parseInt(len, 10), timed, timed ? n : 60, carry)}>&#9654; Start</button>
+      <button type="button" id="start-btn" className="btn primary" disabled={timed && !secsOk} onClick={() => onStart({ op, len: parseInt(len, 10), timed, limit: timed ? n : 60, carry })}>&#9654; Start</button>
     </section>
   );
 }

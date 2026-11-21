@@ -2,7 +2,8 @@
 // Solves thousands of generated problems by following the guided steps exactly
 // as the UI does, and checks the board ends up with the right answer.
 import assert from 'assert';
-import Engine from '../engine.js';
+import * as Engine from '../engine.js';
+const regroups = Engine.regroups;
 
 function simulate(problem) {
   var steps = Engine.buildSteps(problem);
@@ -33,12 +34,7 @@ var counts = { add: 0, sub: 0 }, zeros = 0;
       var got = simulate(p);
       assert.strictEqual(got, Engine.solution(p), op + ' ' + p.a + ' ' + p.b + ' -> ' + got);
       // Must actually involve a carry/borrow.
-      var steps = Engine.buildSteps(p);
-      var regroup = steps.some(function (s) {
-        return s.effects.some(function (e) { return e.kind === 'carry' || e.kind === 'newTop'; }) ||
-          (op === 'add' && s.effects.length === 2);
-      });
-      assert.ok(regroup, 'problem needs a carry or borrow: ' + p.a + ' ' + p.b);
+      assert.ok(regroups(Engine.buildSteps(p)), 'problem needs a carry or borrow: ' + p.a + ' ' + p.b);
       counts[op]++;
     }
   });
@@ -61,17 +57,11 @@ for (var k = 0; k < 500; k++) {
   assert.strictEqual(simulate(q4), Engine.solution(q4));
 }
 // Carry/borrow switch off: no problem may carry or borrow (add and sub, 2 and 3 digits).
-function regroups(p) {
-  return Engine.buildSteps(p).some(function (s) {
-    return s.effects.some(function (e) { return e.kind === 'carry' || e.kind === 'newTop'; }) ||
-      (p.op === 'add' && s.effects.length === 2);
-  });
-}
 for (var m = 0; m < 1000; m++) {
   ['add', 'sub'].forEach(function (op) {
     [2, 3].forEach(function (len) {
       var p = Engine.generateProblem(op, len, Math.random, false);
-      assert.ok(!regroups(p), 'no-carry problem regroups: ' + op + ' ' + p.a + ' ' + p.b);
+      assert.ok(!regroups(Engine.buildSteps(p)), 'no-carry problem regroups: ' + op + ' ' + p.a + ' ' + p.b);
     });
   });
 }
@@ -104,7 +94,7 @@ var addCarryOff = 0; // carry-off problems that still carry in the add phase
         assert.strictEqual(s.targets.length, s.expected.length, 'one target per digit: ' + s.question);
       });
       assert.strictEqual(simulate(mp), Engine.solution(mp), 'mul ' + mp.a + ' x ' + mp.b);
-      var needs = ms.some(function (s) { return s.expected.length > 1 && !/^0+$/.test(s.expected); });
+      var needs = regroups(ms);
       if (len > 1 && carry) assert.ok(needs, 'carry-on needs a carry: ' + mp.a + ' x ' + mp.b);
       if (len > 1 && !carry) assert.ok(!ms.some(function (s) { return s.effects.some(function (e) { return e.kind === 'mcarry'; }); }), 'carry-off: no multiply carry: ' + mp.a + ' x ' + mp.b);
       if (len > 1 && !carry && needs) addCarryOff++;
@@ -136,5 +126,17 @@ assert.strictEqual(steps('mul', 3, 3).length, 1);
 assert.strictEqual(steps('mul', 7, 8)[0].expected, '56');
 assert.deepStrictEqual(steps('mul', 7, 8)[0].effects.map(function (e) { return e.col; }), [1, 0]);
 assert.strictEqual(steps('mul', 7, 8)[0].effects[0].kind, 'ans');
+
+// No step text may say "undefined" (PLACES ran out at 4-digit multiply before).
+[['add', 1], ['add', 2], ['add', 3], ['add', 4], ['sub', 2], ['sub', 3], ['sub', 4], ['mul', 1], ['mul', 2], ['mul', 3], ['mul', 4]].forEach(function (pair) {
+  for (var u = 0; u < 300; u++) {
+    Engine.buildSteps(Engine.generateProblem(pair[0], pair[1], Math.random, u % 2 === 0)).forEach(function (s) {
+      assert.ok(!/undefined/.test(s.question + s.success + s.hint + s.title), 'text says undefined: ' + s.success);
+    });
+  }
+});
+Engine.buildSteps({ op: 'mul', a: 9999, b: 9999, len: 4 }).forEach(function (s) {
+  assert.ok(!/undefined/.test(s.success), 'worst case says undefined: ' + s.success);
+});
 
 console.log('OK - ' + counts.add + ' addition and ' + counts.sub + ' subtraction problems solved correctly.');

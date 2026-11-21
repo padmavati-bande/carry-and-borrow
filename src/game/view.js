@@ -23,7 +23,12 @@ export function bufferFor(cur, row, col) {
 
 // ones column with a two-digit sum: answer row grows one cell to the right
 export function wide(cur) {
-  return !cur.finished && !cur.settle && activeStep(cur).targets.some((t) => t.col < 0);
+  return !cur.finished && !cur.settle && hasExtraCell(activeStep(cur));
+}
+
+// A step that writes into the extra cell right of the ones column (col -1).
+export function hasExtraCell(step) {
+  return step.targets.some((t) => t.col < 0);
 }
 
 export function isTarget(cur, row, col) {

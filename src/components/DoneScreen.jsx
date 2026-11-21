@@ -1,4 +1,4 @@
-import { TOTAL } from '../game/reducer.js';
+import { TOTAL } from '../game/config.js';
 
 export default function DoneScreen({ game, onAgain, onSettings }) {
   const msg = game.good === TOTAL ? 'Perfect score! Amazing work.'
